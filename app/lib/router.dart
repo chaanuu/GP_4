@@ -9,8 +9,10 @@ import 'package:app/screens/activity_mets_screen.dart';
 import 'package:app/screens/food_photo_screen.dart';
 import 'package:app/screens/diet_insights_screen.dart';
 import 'package:app/screens/inbody_screen.dart';
+import 'screens/login_screen.dart';
 
 final GoRouter appRouter = GoRouter(
+  //initialLocation: '/login', 로그인화면으로 시작
   routes: [
     GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
     GoRoute(path: '/qr', builder: (_, __) => const QrScanScreen()),
@@ -20,5 +22,9 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/food', builder: (_, __) => const FoodPhotoScreen()),
     GoRoute(path: '/diet', builder: (_, __) => const DietInsightsScreen()),
     GoRoute(path: '/inbody', builder: (_, __) => const InbodyScreen()),
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    )
   ],
 );
