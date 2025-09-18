@@ -1,0 +1,24 @@
+{
+  "name": "gpserver",
+  "version": "1.0.0",
+  "description": "\"# Server Module\"",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chaanuu/GP_4.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chaanuu/GP_4/issues"
+  },
+  "homepage": "https://github.com/chaanuu/GP_4#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "mysql2": "^3.14.5"
+  }
+}
