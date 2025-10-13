@@ -13,7 +13,6 @@ dependencies:
 
   # 아이콘
   cupertino_icons: ^1.0.8
-  flutter_svg: ^2.0.9
 
   # 라우팅
   go_router: ^14.0.0
@@ -38,6 +37,26 @@ dependencies:
 
   # 날짜/시간 포맷
   intl: ^0.19.0
+
+  # QR 코드 스캔
+  mobile_scanner: ^5.1.0
+
+  # 차트 (활동량 분석)
+  fl_chart: ^0.66.2
+
+  # 소셜 로그인
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.0
+
+  # 걸음 수 측정
+  pedometer: ^4.0.1
+
+  # 로컬 데이터 저장 (눈바디 사진 경로 등)
+  path_provider: ^2.1.2
+  shared_preferences: ^2.2.2
+
+  # SVG 이미지 사용 (소셜 로그인 버튼 등)
+  flutter_svg: ^2.0.10+1
 
 dev_dependencies:
   flutter_test:
