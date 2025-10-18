@@ -56,7 +56,7 @@ class CalorieCard extends StatelessWidget {
                   Text(
                     goalText,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 13,
                       color: Colors.grey,
                     ),
                   ),

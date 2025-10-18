@@ -28,7 +28,7 @@ class WorkoutHubScreen extends StatelessWidget {
           children: [
             ImageCard(
               title: '오늘의\n프로그램',
-              imagePath: 'assets/images/program.png', // 이미지 경로
+              imagePath: 'assets/images/program.jpg', // 이미지 경로
               onTap: () {
                 Navigator.pushNamed(context, '/workout_program');
               },
@@ -37,7 +37,7 @@ class WorkoutHubScreen extends StatelessWidget {
             const SizedBox(height: 16),
             ImageCard(
               title: '단일 운동',
-              imagePath: 'assets/images/single_workout.png', // 이미지 경로
+              imagePath: 'assets/images/single_workout.jpg', // 이미지 경로
               onTap: () {
                 Navigator.pushNamed(context, '/single_exercise_list');
               },
@@ -51,7 +51,7 @@ class WorkoutHubScreen extends StatelessWidget {
             const SizedBox(height: 16),
             ImageCard(
               title: '부위별\n상태',
-              imagePath: 'assets/images/body_part.png', // 이미지 경로
+              imagePath: 'assets/images/body_part.jpg', // 이미지 경로
               onTap: () {
                 Navigator.pushNamed(context, '/muscle_condition');
               },

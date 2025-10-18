@@ -12,17 +12,12 @@ from dotenv import load_dotenv
 # .env 파일에서 환경 변수 불러옴(API KEY)
 load_dotenv()
 USDA_API_KEY = os.getenv("USDA_API_KEY")
-KOREAN_API_KEY = os.getenv("KOREAN_API_KEY")
 
 if not USDA_API_KEY:
     raise ValueError("USDA API key not found. Please check your .env file.")
-if not KOREAN_API_KEY:
-    raise ValueError("Korean API key not found. Please check your .env file.")
 
-
-# 한/미 API 관리
 def get_usda_nutrition_info(food_name):
-    # USDA API를 통해 영양 정보를 가져오는 함수(미국)
+    # USDA API를 통해 영양 정보를 가져오는 함수
     search_url = f"https://api.nal.usda.gov/fdc/v1/foods/search?api_key={USDA_API_KEY}&query={food_name}"
     
     try:
@@ -53,47 +48,9 @@ def get_usda_nutrition_info(food_name):
     except (requests.exceptions.RequestException, KeyError):
         return None
 
-# 식약처 API를 통해 영양 정보를 가져오는 함수(한국)
-def get_korean_nutrition_info(food_name):
-    api_url = f"http://openapi.foodsafetykorea.go.kr/api/{KOREAN_API_KEY}/I2790/json/1/100/DESC_KOR={food_name}"
-    
-    try:
-        response = requests.get(api_url)
-        response.raise_for_status()
-        data = response.json()
-        
-        if data.get('I2790', {}).get('RESULT', {}).get('MSG_CODE') != 'INFO-000':
-            return None
-            
-        item = data['I2790']['row'][0]
-        nutrition_data = {
-            '에너지(Kcal)': f"{item['NUTR_CONT1']} kcal",
-            '단백질(g)': f"{item['NUTR_CONT2']} g",
-            '지방(g)': f"{item['NUTR_CONT3']} g",
-            '탄수화물(g)': f"{item['NUTR_CONT4']} g",
-        }
-        return nutrition_data
-        
-    except (requests.exceptions.RequestException, KeyError, IndexError):
-        return None
-
 # 메인 영양정보 함수
 def get_nutrition_info(food_name):
-    # Food-101 데이터셋의 클래스 이름과 한국 음식을 매핑
-    korean_food_list = ['김치찌개', '비빔밥', '불고기', '된장찌개', '잡채'] # 예시 리스트, 실제 데이터셋에 맞춰 수정 필요
-    
-    if food_name in korean_food_list:
-        print(f"'{food_name}'은(는) 한국 음식으로 식약처 API를 호출합니다.")
-        nutrition = get_korean_nutrition_info(food_name)
-        if nutrition:
-            return nutrition
-        else:
-            print("식약처 API에서 데이터를 찾을 수 없습니다. USDA API를 시도합니다.")
-            return get_usda_nutrition_info(food_name)
-    else:
-        print(f"'{food_name}'은(는) 미국 음식으로 USDA API를 호출합니다.")
-        return get_usda_nutrition_info(food_name)
-
+    return get_usda_nutrition_info(food_name)
 
 # 모델 및 이미지 처리
 with open('food101_classes.txt', 'r') as f:
@@ -119,7 +76,6 @@ transform = transforms.Compose([
     )
 ])
 
-
 def predict_image(image_path):
     image = Image.open(image_path).convert("RGB")
     input_tensor = transform(image).unsqueeze(0)
@@ -133,12 +89,39 @@ def predict_image(image_path):
     
     nutrition_info = get_nutrition_info(predicted_class)
     
-    if nutrition_info:
-        print("Nutritional Information:")
-        for key, value in nutrition_info.items():
-            print(f"- {key}: {value}")
-    else:
-        print("Nutritional info not available.")
+    if not nutrition_info and '_' in predicted_class:
+        search_words = predicted_class.split('_')
+        last_word = search_words[-1]
+        
+        print(f"Nutritional info not found for '{predicted_class}'. Retrying with the last word: '{last_word}'...")
+        nutrition_info = get_nutrition_info(last_word)
     
+    if nutrition_info:
+        ORDER = ['Energy', 'Protein', 'Total lipid (fat)', 'Carbohydrate, by difference']
+        
+        print("\nNutritional Information:")
+        for key in ORDER:
+            value = nutrition_info.get(key)
+            if value:
+                display_key = 'Fat' if key == 'Total lipid (fat)' else key
+                print(f"- {display_key}: {value}")
+            else:
+                print(f"- {key}: N/A")
+    else:
+        print("Nutritional info not available after all attempts.\n")
+
+    user_ans = input("Is the result correct?(y/n) ")
+    if user_ans.lower() == 'n':
+        user_foodname = input("Would you like to type the name of the food manually? ").lower()
+        
+        manual_nutrition_info = get_nutrition_info(user_foodname)
+
+        if manual_nutrition_info:
+            print(f"\nNutritional Information for '{user_foodname}':")
+            for key, value in manual_nutrition_info.items():
+                print(f"- {key}: {value}")
+        else:
+            print(f"\nSorry, nutritional info for '{user_foodname}' is not available in the database.")
+            
 # 예시 사용
-predict_image("img/sushi.jpg")
+predict_image("img/sandwich.jpg")
