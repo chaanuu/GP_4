@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-// 앱의 모든 스크린(페이지)들을 import 합니다.
 import 'screens/auth/sign_in_screen.dart';
 import 'screens/home/main_screen.dart';
 import 'screens/activity/activity_analysis_screen.dart';
@@ -14,10 +13,15 @@ import 'screens/workout/muscle_condition_screen.dart';
 import 'screens/workout/single_exercise_list_screen.dart';
 import 'screens/workout/qr_scanner_screen.dart';
 import 'screens/body_log/body_log_screen.dart';
+import 'screens/workout/exercise_setup_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'screens/workout/program_builder_screen.dart';
+import 'screens/workout/save_program_screen.dart';
+import 'screens/workout/program_detail_screen.dart';
 
-
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -43,8 +47,12 @@ class MyApp extends StatelessWidget {
         '/muscle_condition': (context) => const MuscleConditionScreen(),
         '/single_exercise_list': (context) => const SingleExerciseListScreen(),
         '/qr_scanner': (context) => const QrScannerScreen(),
-        // Note: MainScreen과 ActivityAnalysisScreen은 AppShell의 _tabScreens에 직접 사용되므로 여기에 routes를 등록할 필요는 없습니다.
-        // 이 방식으로 라우팅을 사용하지 않을 화면들은 routes에 등록하지 않아도 됩니다.
+        '/exercise_setup': (context) => const ExerciseSetupScreen(),
+        '/workout_program': (context) => const WorkoutProgramScreen(),
+        '/program_builder': (context) => const ProgramBuilderScreen(),
+        '/save_program': (context) => const SaveProgramScreen(),
+        '/program_detail': (context) => const ProgramDetailScreen(),
+
       },
     );
   }
@@ -58,10 +66,10 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  // -1은 초기 상태 (MainScreen)를 나타냅니다. 0부터는 탭 인덱스를 의미합니다.
+  // -1은 초기 상태 (MainScreen)를 나타냅니다. 0부터는 탭 인덱스를 의미
   int _selectedIndex = -1;
 
-  // 하단 네비게이션 바 아이콘 순서에 맞게 페이지를 매핑합니다.
+  // 하단 네비게이션 바 아이콘 순서에 맞게 페이지를 매핑
   static const List<Widget> _tabScreens = <Widget>[
     FoodDiaryScreen(),        // Index 0: '식사' (restaurant icon)
     ActivityAnalysisScreen(), // Index 1: '활동' (run icon)
@@ -70,9 +78,9 @@ class _AppShellState extends State<AppShell> {
     BodyLogScreen(),          // Index 4: '눈바디' (person icon)
   ];
 
-  // 탭 아이템 클릭 시 호출됩니다.
+  // 탭 아이템 클릭 시 호출
   void _onItemTapped(int index) {
-    if (index == 2) return; // 카메라 버튼은 여기서 처리하지 않습니다.
+    if (index == 2) return;
     setState(() {
       _selectedIndex = index;
     });
@@ -131,7 +139,7 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        // _selectedIndex가 -1이면 MainScreen을, 아니면 선택된 탭 화면을 보여줍니다.
+        // _selectedIndex가 -1이면 MainScreen을, 아니면 선택된 탭 화면을 보여줌
         child: _selectedIndex == -1
             ? const MainScreen()
             : _tabScreens.elementAt(_selectedIndex),
@@ -170,7 +178,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   Widget _buildNavItem(IconData icon, int index) {
-    // _selectedIndex와 현재 탭의 index가 정확히 일치할 때만 선택된 것으로 처리합니다.
+    // _selectedIndex와 현재 탭의 index가 정확히 일치할 때만 선택된 것으로 처리
     final bool isSelected = _selectedIndex == index;
 
     return Expanded(

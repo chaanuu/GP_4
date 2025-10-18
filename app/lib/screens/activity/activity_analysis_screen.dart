@@ -1,15 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; // 차트 라이브러리
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ActivityAnalysisScreen extends StatelessWidget {
+class ActivityAnalysisScreen extends StatefulWidget {
   const ActivityAnalysisScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // TODO: 백그라운드 서비스에서 걸음 수, 칼로리 데이터 가져오기
-    final int steps = 8795;
-    final int calories = 1380;
+  State<ActivityAnalysisScreen> createState() => _ActivityAnalysisScreenState();
+}
 
+class _ActivityAnalysisScreenState extends State<ActivityAnalysisScreen> {
+  int _steps = 0;
+  int _calories = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadActivityData();
+  }
+
+  // SharedPreferences에서 저장된 걸음 수 데이터를 불러오는 함수
+  Future<void> _loadActivityData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      // 'total_steps' 키로 저장된 값을 불러옵니다. 값이 없으면 0을 기본값으로 사용합니다.
+      _steps = prefs.getInt('total_steps') ?? 0;
+      // TODO: 불러온 걸음 수와 사용자 정보(키, 몸무게)를 이용해 METS 칼로리 계산
+      // 예시: _calories = calculateCalories(_steps, userWeight, userHeight);
+      _calories = (_steps * 0.04).toInt(); // 임시 계산
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('활동량 분석', style: TextStyle(color: Colors.black)),
@@ -31,9 +54,9 @@ class ActivityAnalysisScreen extends StatelessWidget {
             const SizedBox(height: 24),
             Row(
               children: [
-                Expanded(child: _buildStatCard('걸음 수', '$steps걸음', '전일 대비 +17%')),
+                Expanded(child: _buildStatCard('걸음 수', '$_steps 걸음', '전일 대비 +17%')), // _steps 변수 사용
                 const SizedBox(width: 16),
-                Expanded(child: _buildStatCard('소비한 칼로리', '${calories}kcal', '전일 대비 +8%')),
+                Expanded(child: _buildStatCard('소비한 칼로리', '$_calories kcal', '전일 대비 +8%')), // _calories 변수 사용
               ],
             ),
             const SizedBox(height: 24),
@@ -50,10 +73,9 @@ class ActivityAnalysisScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey[200]!),
               ),
-              // TODO: 실제 주간 데이터를 기반으로 차트 그리기
               child: LineChart(
                 LineChartData(
-                  // 차트 디자인 및 데이터 설정
+                  // TODO: 실제 주간 데이터를 기반으로 차트 그리기
                 ),
               ),
             )

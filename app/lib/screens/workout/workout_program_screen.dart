@@ -1,58 +1,78 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/workout_program.dart';
+import '../../providers/program_provider.dart';
 
-class WorkoutProgramScreen extends StatelessWidget {
+// StatefulWidget을 ConsumerWidget으로 변경
+class WorkoutProgramScreen extends ConsumerWidget {
   const WorkoutProgramScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 1. FutureProvider를 watch하여 데이터의 상태(loading, data, error)를 감시
+    final programsAsyncValue = ref.watch(programsProvider);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.black), onPressed: () => Navigator.of(context).pop()),
-        title: const Text('프로그램', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 1,
+        title: const Text('나의 운동 프로그램'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('오늘의 프로그램', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-            const Text('-', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-            const Text('등 집중 훈련', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 32),
-            _buildSectionTitle('1. 준비 운동 및 유산소 (10분)'),
-            _buildListItem('가벼운 조깅 또는 걷기 (5분): 몸을 예열합니다.'),
-            _buildListItem('동적 스트레칭 (5분): 어깨, 등, 허리 위주로 가볍게 풀어줍니다.'),
-            const SizedBox(height: 24),
-            _buildSectionTitle('2. 본 운동 (45분)'),
-            _buildListItem('랫풀다운 (4세트): 15회 - 12회 - 10회 - 8~10회\n팁: 광배근에 집중하며 팔꿈치를 당깁니다.'),
-            _buildListItem('바벨 로우 (4세트): 15회 - 12회 - 10회 - 8~10회\n팁: 허리를 곧게 펴고, 등 근육을 쥐어짜듯 수축합니다.'),
-            const SizedBox(height: 24),
-            _buildSectionTitle('3. 마무리 운동 (5분)'),
-            _buildListItem('정적 스트레칭 (5분): 운동 후 늘어난 등 근육을 스트레칭으로 이완시킵니다.'),
-            _buildListItem('참고: 세트 사이 휴식 시간은 1분~1분 30초로 설정하세요.'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-    );
-  }
-
-  Widget _buildListItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8.0, top: 8.0, bottom: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
         children: [
-          const Text('• ', style: TextStyle(fontSize: 16)),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 16, height: 1.5))),
+          Expanded(
+            // 2. when을 사용하여 상태에 따라 다른 UI를 보여줌
+            child: programsAsyncValue.when(
+              // 로딩 중일 때
+              loading: () => const Center(child: CircularProgressIndicator()),
+              // 에러 발생 시
+              error: (err, stack) => Center(child: Text('에러 발생: $err')),
+              // 데이터 로딩 성공 시
+              data: (programs) {
+                return programs.isEmpty
+                    ? const Center(child: Text('저장된 프로그램이 없습니다.\n새로운 프로그램을 만들어보세요!'))
+                    : ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: programs.length,
+                  itemBuilder: (context, index) {
+                    final program = programs[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 16.0),
+                      child: ListTile(
+                        title: Text(program.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text('${program.exercises.length}개의 운동'),
+                        trailing: Text(program.date),
+                        onTap: () {
+                          Navigator.pushNamed(context, '/program_detail', arguments: program);
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () async {
+                  final newProgram = await Navigator.pushNamed(context, '/program_builder');
+                  if (newProgram != null && newProgram is WorkoutProgram) {
+                    // 3. ApiService를 통해 서버에 데이터 생성 요청
+                    await ref.read(apiServiceProvider).createProgram(newProgram);
+                    // 4. 데이터 생성이 성공하면, 목록을 새로고침하도록 provider를 무효화
+                    ref.invalidate(programsProvider);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('나의 운동프로그램 만들기', style: TextStyle(fontSize: 16)),
+              ),
+            ),
+          ),
         ],
       ),
     );
