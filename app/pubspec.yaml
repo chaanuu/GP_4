@@ -11,6 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # 안정적인 백그라운드 실행을 위한 서비스 패키지
+  flutter_background_service: ^5.0.1
+
   # 아이콘
   cupertino_icons: ^1.0.8
 
@@ -67,7 +70,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/
     - assets/images/
 
   fonts:
