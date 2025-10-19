@@ -37,3 +37,7 @@ server/*.log
 **/*.jks
 **/*.keystore
 **/google-services.json
+
+
+# Node.js 
+node_modules/
