@@ -1,9 +1,10 @@
-import db from '../modules/utils/DB.js';
+import { db } from '../modules/utils/DB.js';
 
 // { name, id, {inbodys}, nutrition }
 export class User {
-    constructor(name) {
+    constructor(name, email = null) {
         this.name = name;
+        this.email = email;
         this.id = null; // DB에 저장되면 설정됨
         this.inbodys = []; // Inbody 객체 데이터 (미정)
         this.nutrition = {}; // {kcal, carb, protein, fat} TODO : 인자 수정 필요
@@ -15,17 +16,14 @@ export class User {
      * @returns {Promise<User>} 저장된 User 객체 반환
      */
     async save() {
-        const conn = await db.getConnection();
         try {
-            const [result] = await conn.query(
-                'INSERT INTO users (name) VALUES (?)',
-                [this.name]
-            );
-            this.id = result.insertId;
+            db.update('users', [this.name, this.id, this.inbodys, this.nutrition]);
+        } catch (error) {
+            console.error('Error saving user on DB :', error);
+            throw error;
         } finally {
-            conn.release();
+            // conn.release(); // db 모듈에서 처리
         }
-        return this;
     }
 
     /**
@@ -33,12 +31,12 @@ export class User {
      * @returns {Promise<Array<User>>} 모든 User 객체 배열 반환
      */
     static async getAll() {
-        const conn = await db.getConnection();
         try {
-            const [rows] = await conn.query('SELECT * FROM users');
+            let rows = db.read('users', {});
             return rows.map(row => new User(row));
-        } finally {
-            conn.release();
+        } catch (error) {
+            console.error('Error getting all users from DB :', error);
+            throw error;
         }
 
     }
@@ -50,17 +48,12 @@ export class User {
      * @returns {Promise<User|null>} id에 해당하는 User 객체 반환, 없으면 null 반환
      */
     static async getById(id) {
-        const conn = await db.getConnection();
         try {
-            const [rows] = await conn.query('SELECT * FROM users WHERE id = ?', [id]);
-            if (rows.length > 0) {
-                return new User(rows[0]);
-            }
-            return null;
-        } finally {
-            conn.release();
+            return db.read('users', { id: id });
+        } catch (error) {
+            console.error('Error getting user by ID from DB :', error);
+            throw error;
         }
-
     }
 
 
@@ -70,13 +63,11 @@ export class User {
      * @returns  {Promise<Array<User>>} 이름에 query가 포함된 User 객체 배열 반환
      */
     static async getByQuery(query) {
-        const conn = await db.getConnection();
         try {
-            const searchQuery = `%${query}%`;
-            const [rows] = await conn.query('SELECT * FROM users WHERE name LIKE ?', [searchQuery]);
-            return rows.map(row => new User(row));
-        } finally {
-            conn.release();
+            return db.query('users', [query]);
+        } catch (error) {
+            console.error('Error getting users by query from DB :', error);
+            throw error;
         }
 
     }
@@ -88,16 +79,16 @@ export class User {
      * @returns  {Promise<boolean>} 수정 성공 여부 반환
      */
     static async update(id, updatedUser) {
-        const { name } = updatedUser;
-        const conn = await db.getConnection();
         try {
-            const [result] = await conn.query(
-                'UPDATE users SET name = ? WHERE id = ?',
-                [name, id]
-            );
-            return result.affectedRows > 0;
-        } finally {
-            conn.release();
+            return db.update('users', {
+                name: updatedUser.name,
+                inbodys: updatedUser.inbodys,
+                nutrition: updatedUser.nutrition,
+                id: id
+            });
+        } catch (error) {
+            console.error('Error getting user by ID from DB :', error);
+            throw error;
         }
 
     }
@@ -109,12 +100,11 @@ export class User {
      * @returns {Promise<boolean>} 삭제 성공 여부 반환
      */
     static async delete(id) {
-        const conn = await db.getConnection();
         try {
-            const [result] = await conn.query('DELETE FROM users WHERE id = ?', [id]);
-            return result.affectedRows > 0;
-        } finally {
-            conn.release();
+            return db.delete('users', { id: id });
+        } catch (error) {
+            console.error('Error getting user by ID from DB :', error);
+            throw error;
         }
 
     }

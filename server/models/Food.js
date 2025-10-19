@@ -1,4 +1,5 @@
-import db from '../modules/utils/DB.js';
+import { db } from '../modules/utils/DB.js';
+import User from './User.js';
 
 export class Food {
     constructor({ userId, name, kcal, carb, protein, fat }) {
@@ -18,16 +19,18 @@ export class Food {
      * 
      */
     async save() {
-        const conn = await db.getConnection();
         try {
-            const [result] = await conn.query(
-                'INSERT INTO foods (user_id, name, kcal, carb, protein, fat) VALUES (?, ?, ?, ?, ?, ?)',
-                [this.userId, this.name, this.kcal, this.carb, this.protein, this.fat]
-            );
-            this.id = result.insertId;
-            return this;
-        } finally {
-            conn.release();
+            await db.create('foods', {
+                user_id: this.userId,
+                name: this.name,
+                kcal: this.kcal,
+                carb: this.carb,
+                protein: this.protein,
+                fat: this.fat
+            });
+        } catch (error) {
+            console.error('Error saving food on DB :', error);
+            throw error;
         }
     }
 
@@ -38,15 +41,12 @@ export class Food {
      */
 
     static async getById(id) {
-        const conn = await db.getConnection();
         try {
-            const [rows] = await conn.query('SELECT * FROM foods WHERE id = ?', [id]);
-            if (rows.length > 0) {
-                return new Food(rows[0]);
-            }
-            return null;
-        } finally {
-            conn.release();
+            return new Food(await db.read('foods', { id: id }));
+        }
+        catch (error) {
+            console.error('Error getting food by ID from DB :', error);
+            throw error;
         }
     }
 
@@ -57,14 +57,13 @@ export class Food {
      * @returns {Promise<Array<Food>>} 이름에 query가 포함된 Food 객체 배열 반환
      */
     static async getByQuery(opt) {
-        const conn = await db.getConnection();
         try {
-            const searchQuery = `%${query}%`;
-            const [rows] = await conn.query('SELECT * FROM foods WHERE name LIKE ?', [searchQuery]);
-            return rows.map(row => new Food(row));
-        } finally {
-            conn.release();
+            return new Food(await db.query('foods', opt));
+        } catch (error) {
+            console.error('Error getting foods by query from DB :', error);
+            throw error;
         }
+
     }
 
 
@@ -77,15 +76,11 @@ export class Food {
      */
     static async update(id, updatedFood) {
         const { name, kcal, carb, protein, fat } = updatedFood;
-        const conn = await db.getConnection();
         try {
-            const [result] = await conn.query(
-                'UPDATE foods SET name = ?, kcal = ?, carb = ?, protein = ?, fat = ? WHERE id = ?',
-                [name, kcal, carb, protein, fat, id]
-            );
-            return result.affectedRows > 0;
-        } finally {
-            conn.release();
+            await db.update('foods', { name, kcal, carb, protein, fat }, { id: id });
+        } catch (error) {
+            console.error('Error updating food on DB :', error);
+            throw error;
         }
     }
 
@@ -96,12 +91,11 @@ export class Food {
      * @returns {Promise<boolean>} 삭제 성공 여부 반환
      */
     static async delete(id) {
-        const conn = await db.getConnection();
         try {
-            const [result] = await conn.query('DELETE FROM foods WHERE id = ?', [id]);
-            return result.affectedRows > 0;
-        } finally {
-            conn.release();
+            await db.delete('foods', { id: id });
+        } catch (error) {
+            console.error('Error deleting food on DB :', error);
+            throw error;
         }
     }
 
@@ -113,12 +107,12 @@ export class Food {
      * 
      */
     static async getAllByUserId(userId) {
-        const conn = await db.getConnection();
         try {
-            const [rows] = await conn.query('SELECT * FROM foods WHERE user_id = ?', [userId]);
+            rows = await db.read('foods', { userId: userId });
             return rows.map(row => new Food(row));
-        } finally {
-            conn.release();
+        } catch (error) {
+            console.error('Error getting foods by userId from DB :', error);
+            throw error;
         }
     }
 }
