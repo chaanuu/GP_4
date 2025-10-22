@@ -10,7 +10,6 @@ class BodyLogScreen extends StatelessWidget {
     final List<Map<String, String>> bodyImages = [
       {'path': 'assets/images/body1.png', 'date': '2025년 10월 12일'},
       {'path': 'assets/images/body2.png', 'date': '2025년 10월 11일'},
-      {'path': 'assets/images/body3.png', 'date': '2025년 10월 10일'},
     ];
 
     return Scaffold(

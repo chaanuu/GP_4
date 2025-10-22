@@ -1,4 +1,5 @@
 import { db } from '../modules/utils/DB.js';
+import { db } from '../modules/utils/DB.js';
 
 export class Exercise {
     constructor({ userId, name, mets, code, mainMuscle, subMuscle, dateExecuted }) {
@@ -65,7 +66,7 @@ export class Exercise {
     // 유저 귀속 운동 전체
     static async getAllByUserId(userId) {
         try {
-            const [rows] = await db.read('exercises', { userId: userId });
+            const rows = await db.read('exercises', { userId: userId });
             return rows.map(row => new Exercise(row));
         } catch (error) {
             console.error('Error getting user exercises from DB :', error);

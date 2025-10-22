@@ -36,7 +36,7 @@ class MainScreen extends StatelessWidget {
             children: [
               ImageCard(
                 title: '최근 식사',
-                imagePath: 'assets/images/pears.png', // TODO: assets 폴더에 이미지 추가
+                imagePath: 'assets/images/pears.jpg', // TODO: assets 폴더에 이미지 추가
                 onTap: () {
                   // 식습관 분석 페이지로 이동
                   Navigator.pushNamed(context, '/food_diary');
@@ -45,7 +45,7 @@ class MainScreen extends StatelessWidget {
               const SizedBox(height: 16),
               ImageCard(
                 title: '활동량',
-                imagePath: 'assets/images/track.png', // TODO: assets 폴더에 이미지 추가
+                imagePath: 'assets/images/track.jpg', // TODO: assets 폴더에 이미지 추가
                 onTap: () {
                   // 활동량 분석 페이지로 이동
                   // AppShell의 탭으로 이동하고 싶다면 아래처럼 할 수도 있습니다.
@@ -67,7 +67,7 @@ class MainScreen extends StatelessWidget {
               const SizedBox(height: 16),
               ImageCard(
                 title: '추천 운동',
-                imagePath: 'assets/images/dumbbells.png', // TODO: assets 폴더에 이미지 추가
+                imagePath: 'assets/images/weights.jpg', // TODO: assets 폴더에 이미지 추가
                 onTap: () {
                   // 오늘의 프로그램 페이지로 이동
                   Navigator.pushNamed(context, '/workout_program');

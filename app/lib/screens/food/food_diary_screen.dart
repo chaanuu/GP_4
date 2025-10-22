@@ -26,10 +26,10 @@ class FoodDiaryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // TODO: 백엔드에서 음식 기록 데이터 가져오기 (아래는 임시 데이터)
     final List<FoodLog> foodLogs = [
-      FoodLog(imageUrl: 'assets/images/food1.png', name: '설탕 절인 토마토', portion: '100g', calories: 73, mealType: '간식', date: '9/19'),
-      FoodLog(imageUrl: 'assets/images/food2.png', name: '피자', portion: '90g', calories: 237, mealType: '저녁', date: '9/19'),
-      FoodLog(imageUrl: 'assets/images/food3.png', name: '계란 샌드위치', portion: '97g', calories: 198, mealType: '아침', date: '9/20'),
-      FoodLog(imageUrl: 'assets/images/food4.png', name: '콩국수', portion: '210g', calories: 655, mealType: '점심', date: '9/20'),
+      FoodLog(imageUrl: 'assets/images/sandwich.jpg', name: '샌드위치', portion: '100g', calories: 198, mealType: '점심', date: '9/19'),
+      FoodLog(imageUrl: 'assets/images/pizza.jpg', name: '피자', portion: '90g', calories: 237, mealType: '저녁', date: '9/19'),
+      FoodLog(imageUrl: 'assets/images/bread.jpg', name: '빵', portion: '120g', calories: 302, mealType: '아침', date: '9/20'),
+      FoodLog(imageUrl: 'assets/images/salmon.jpg', name: '연어 구이', portion: '180g', calories: 502, mealType: '점심', date: '9/20'),
     ];
 
     return Scaffold(

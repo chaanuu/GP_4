@@ -1,5 +1,5 @@
 import { db } from '../modules/utils/DB.js';
-import { User } from './User.js';
+import User from './User.js';
 
 export class Food {
     constructor({ userId, name, kcal, carb, protein, fat, date = new Date(), id = null }) {
@@ -26,7 +26,7 @@ export class Food {
                 carb: this.carb,
                 protein: this.protein,
                 fat: this.fat
-            }).then((result) => { this.id = result.insertId; });
+            });
         } catch (error) {
             console.error('Error saving food on DB :', error);
             throw error;
@@ -107,19 +107,10 @@ export class Food {
      */
     static async getAllByUserId(userId) {
         try {
-            const [rows] = await db.read('foods', { userId: userId });
+            rows = await db.read('foods', { userId: userId });
             return rows.map(row => new Food(row));
         } catch (error) {
             console.error('Error getting foods by userId from DB :', error);
-            throw error;
-        }
-    }
-
-    static async deleteAllByUserId(userId) {
-        try {
-            await db.delete('foods', { userId: userId });
-        } catch (error) {
-            console.error('Error deleting foods by userId from DB :', error);
             throw error;
         }
     }

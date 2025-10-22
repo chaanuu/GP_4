@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSMotionUsageDescription</key>
+    <string>걸음 수를 측정하여 활동량을 분석하는 데 사용됩니다.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>운동 기구의 QR 코드를 스캔하기 위해 카메라 권한이 필요합니다.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
