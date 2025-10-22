@@ -1,5 +1,5 @@
-import Food from '../../models/Food.js'
-import PythonProcess from '../utils/PythonProcess.js';
+import { Food } from '../../models/Food.js'
+import { PythonProcess } from '../utils/PythonProcess.js';
 
 export class FoodAnalysis {
 

@@ -1,6 +1,18 @@
-import { Food } from "../models/Food";
+import { Food } from "../models/Food.js";
+import { PythonProcess } from "../modules/utils/PythonProcess.js";
 
 export class FoodController {
+
+    static async analyzeFoodImage(req, res) {
+        try {
+            const imagePath = req.file.path; // Assuming you're using multer for file uploads
+            const pythonProcess = new PythonProcess('food_analysis.py', [imagePath]);
+            const result = await pythonProcess.run();
+            res.status(200).json({ analysis: result });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    }
 
     static async getUserFoods(req, res) {
         try {

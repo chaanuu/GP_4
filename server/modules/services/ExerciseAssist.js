@@ -1,4 +1,4 @@
-import PythonProcess from '../utils/PythonProcess.js';
+import { PythonProcess } from '../utils/PythonProcess.js';
 
 export class ExerciseAssist {
 

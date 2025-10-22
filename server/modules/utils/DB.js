@@ -35,7 +35,9 @@ class DB {
      * 데이터베이스에 쿼리를 실행합니다.
      * @param {string} sql - 실행할 SQL 쿼리 문자열 (플레이스홀더 '?' 사용 가능).
      * @param {Array} params - SQL 쿼리의 플레이스홀더에 바인딩될 파라미터 배열.
-     * @returns {Promise<Array>} 쿼리 결과 배열을 반환하는 프로미스.
+     * @returns {Promise<Array>} 쿼리 결과 배열을 반환하는 프로미스. 
+     *  row / OkPacket : { fieldCount, affectedRows, insertId, serverStatus, warningCount, message, protocol41, changedRows}
+     * 
      */
     async query(sql, params) {
         let conn;

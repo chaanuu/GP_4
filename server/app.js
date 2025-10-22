@@ -1,18 +1,19 @@
 import express from 'express';
 
 // routes
-import physiqueChangeRouter from '/routes/PhysiqueChange.js';
-import userRouter from '/routes/User.js';
-import qrcodeRouter from '/routes/Qrcode.js';
-import foodRouter from '/routes/Food.js';
+import { physiqueChangeRouter } from './routes/PhysiqueChange.js';
+import { userRouter } from './routes/User.js';
+import { exerciseRouter } from './routes/Exercise.js';
+import { foodRouter } from './routes/Food.js';
 
 
 const app = express();
 const router = express.Router();
-router.use('/physique', physiqueChangeRouter);
+// router.use('/physique', physiqueChangeRouter);
 router.use('/user', userRouter);
-router.use('/qrcode', qrcodeRouter);
+router.use('/exercise', exerciseRouter);
 router.use('/food', foodRouter);
+
 
 
 const server = app.listen(port, () => {
