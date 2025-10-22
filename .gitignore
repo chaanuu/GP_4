@@ -39,5 +39,5 @@ server/*.log
 **/google-services.json
 
 
-# Node.js
-node_modules/
+# Dependencies
+/node_modules
