@@ -1,6 +1,7 @@
 {
   "name": "gpserver",
   "version": "1.0.0",
+  "type": "module",
   "description": "\"# Server Module\"",
   "main": "app.js",
   "scripts": {
@@ -20,7 +21,9 @@
   "dependencies": {
     "express": "^5.1.0",
     "google-auth-library": "^10.4.0",
+    "helmet": "^8.1.0",
     "ioredis": "^5.8.2",
+    "morgan": "^1.10.1",
     "mysql2": "^3.14.5",
     "oauth2": "^0.0.1"
   }
