@@ -1,7 +1,7 @@
 import express from 'express';
+import { RedisClient } from './utils/Redis.js';
 
 // routes
-import { physiqueChangeRouter } from './routes/PhysiqueChange.js';
 import { userRouter } from './routes/User.js';
 import { exerciseRouter } from './routes/Exercise.js';
 import { foodRouter } from './routes/Food.js';
@@ -20,6 +20,24 @@ const server = app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
 
+
+
+const redisConfig = {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    password: process.env.REDIS_PASSWORD,
+    db: 0,
+};
+
+// 싱글톤 Redis 클라이언트 초기화
+RedisClient.getCacheClient(redisConfig);
+
+redisConfig.db = 1;
+RedisClient.getSessionClient(redisConfig);
+
+
+
+app.use(express.json());
 
 
 // 서버 종료 이벤트를 처리하는 함수
