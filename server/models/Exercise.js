@@ -1,5 +1,4 @@
 import { db } from '../modules/utils/DB.js';
-import { db } from '../modules/utils/DB.js';
 
 export class Exercise {
     constructor({ userId, name, mets, code, mainMuscle, subMuscle, dateExecuted }) {
