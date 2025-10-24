@@ -1,9 +1,14 @@
 import { db } from '../modules/utils/DB.js';
 
 export class Food {
-    constructor({ userId, name, kcal, carb, protein, fat, date = new Date(), id = null }) {
-        this.userId = userId;
+    constructor({ name, kcal, carb, protein, fat, imgUrl, userId = null }) {
+        this.id = null; // DB에 저장되면 설정됨
         this.name = name;
+        this.imgUrl = imgUrl || null;
+
+        this.userId = userId; // null이면 기본구성, 값이 있으면 유저귀속
+
+        // 영양성분 (100g 기준)
         this.kcal = kcal;
         this.carb = carb;
         this.protein = protein;
@@ -19,12 +24,12 @@ export class Food {
     async save() {
         try {
             await db.create('foods', {
-                user_id: this.userId,
                 name: this.name,
                 kcal: this.kcal,
                 carb: this.carb,
                 protein: this.protein,
-                fat: this.fat
+                fat: this.fat,
+                userId: this.userId
             });
         } catch (error) {
             console.error('Error saving food on DB :', error);
@@ -97,21 +102,24 @@ export class Food {
         }
     }
 
-
-    /**
-     * 
-     * @param {number} userId 
-     * @returns {Promise<Array<Food>>} userId에 해당하는 Food 객체 배열 반환
-     * 
-     */
     static async getAllByUserId(userId) {
         try {
-            rows = await db.read('foods', { userId: userId });
+            const rows = await db.read('foods', { userId: userId });
             return rows.map(row => new Food(row));
         } catch (error) {
-            console.error('Error getting foods by userId from DB :', error);
+            console.error('Error getting foods by user ID from DB :', error);
             throw error;
         }
     }
+
+    static async deleteAllByUserId(userId) {
+        try {
+            return db.delete('foods', { userId: userId });
+        } catch (error) {
+            console.error('Error deleting foods by user ID from DB :', error);
+            throw error;
+        }
+    }
+
 
 }
