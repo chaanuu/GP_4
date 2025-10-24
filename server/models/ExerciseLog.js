@@ -1,4 +1,4 @@
-import { db } from '../modules/utils/DB.js';
+import { db } from '../utils/DB.js';
 
 export class ExerciseLog {
     constructor({ userId, exerciseId, reps, sets, dateExecuted, durationMinutes, caloriesBurned }) {

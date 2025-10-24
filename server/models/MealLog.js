@@ -1,4 +1,4 @@
-import { db } from "../modules/utils/DB";
+import { db } from "../utils/DB";
 
 export class MealLog {
     constructor({ userId, foodId, quantity, timeConsumed }) {

@@ -1,4 +1,4 @@
-import { db } from '../modules/utils/DB.js';
+import { db } from '../utils/DB.js';
 
 // { name, id, {inbodys}, nutrition }
 export class User {

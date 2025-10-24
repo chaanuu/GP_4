@@ -1,5 +1,5 @@
-import { verifyGoogleToken, verifyAppleToken } from "../modules/utils/Oauth";
-import { db } from "../modules/utils/DB.js";
+import { verifyGoogleToken, verifyAppleToken } from "../utils/Oauth.js";
+import { db } from "../utils/DB.js";
 import { User } from "../models/User.js";
 
 export class OAuthController {

@@ -1,4 +1,4 @@
-import { db } from '../modules/utils/DB.js';
+import { db } from '../utils/DB.js';
 
 export class Food {
     constructor({ name, kcal, carb, protein, fat, imgUrl, userId = null }) {

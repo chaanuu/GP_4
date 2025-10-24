@@ -1,4 +1,4 @@
-import { db } from '../modules/utils/DB.js';
+import { db } from '../utils/DB.js';
 
 export class UserActivity {
     constructor(userId, walkSteps, kcalBurned, date = new Date()) {
