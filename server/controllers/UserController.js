@@ -28,7 +28,6 @@ export class UserController {
     static async updateUser(req, res) {
         await User.getById(req.params.id).then(user => {
             if (user) {
-                user.name = req.body.name || user.name;
                 // TODO : 필요한 다른 필드들도 여기에 추가
                 res.status(200).json(user);
             } else {
