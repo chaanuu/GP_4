@@ -2,9 +2,9 @@ import { db } from '../utils/DB.js';
 
 // { name, id, {inbodys}, nutrition }
 export class User {
-    constructor(name, email = null) {
-        this.name = name;
+    constructor(email, password_hash) {
         this.email = email;
+        this.password_hash = password_hash;
         this.id = null; // DB에 저장되면 설정됨
         this.inbodys = []; // Inbody 객체 데이터 (미정)
         this.nutrition = {}; // {kcal, carb, protein, fat} TODO : 인자 수정 필요
@@ -13,13 +13,14 @@ export class User {
 
     /**
      * 
+     * 
      * @returns {Promise<User>} 저장된 User 객체 반환
      */
     async save() {
         try {
             await db.create('users', {
-                name: this.name,
                 email: this.email,
+                password_hash: this.password_hash,
                 inbodys: JSON.stringify(this.inbodys),
                 nutrition: JSON.stringify(this.nutrition)
             }).then((result) => { this.id = result.insertId; });
@@ -86,7 +87,8 @@ export class User {
     static async update(id, updatedUser) {
         try {
             return db.update('users', {
-                name: updatedUser.name,
+                email: updatedUser.email,
+                password_hash: updatedUser.password_hash,
                 inbodys: updatedUser.inbodys,
                 nutrition: updatedUser.nutrition,
                 id: id

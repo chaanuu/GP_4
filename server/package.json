@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/chaanuu/GP_4#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "express": "^5.1.0",
     "google-auth-library": "^10.4.0",
     "helmet": "^8.1.0",

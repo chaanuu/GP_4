@@ -73,6 +73,27 @@ export class ExerciseLog {
         }
     }
 
+    static async getAllByUserIdAndDate(userId, dateExecuted) {
+        try {
+            const rows = await db.read('exercise_logs', { userId: userId, dateExecuted: dateExecuted });
+            return rows.map(row => new ExerciseLog(row));
+        } catch (error) {
+            console.error('Error getting exercise logs by user ID and date from DB :', error);
+            throw error;
+        }
+    }
+
+    static async getAllByUserIdAndDateRange(userId, startDate, endDate) {
+        try {
+            const query = 'SELECT * FROM exercise_logs WHERE userId = ? AND dateExecuted BETWEEN ? AND ?';
+            const rows = await db.query(query, [userId, startDate, endDate]);
+            return rows.map(row => new ExerciseLog(row));
+        } catch (error) {
+            console.error('Error getting exercise logs by user ID and date range from DB :', error);
+            throw error;
+        }
+    }
+
 
 
 

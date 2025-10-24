@@ -21,16 +21,19 @@ import { AuthController } from './controllers/AuthController.js';
 import { userRouter } from './routes/User.js';
 import { exerciseRouter } from './routes/Exercise.js';
 import { foodRouter } from './routes/Food.js';
-
+import { exerciseLogRouter } from './routes/ExerciseLog.js';
+import { mealLogRouter } from './routes/MealLog.js';
 
 const port = process.env.PORT || 3000;
 
 const app = express();
 const router = express.Router();
+
 router.use('/user', userRouter);
 router.use('/exercise', exerciseRouter);
 router.use('/food', foodRouter);
-
+router.use('/exercise/log', exerciseLogRouter);
+router.use('/meal/log', mealLogRouter);
 
 // Logger
 app.use(morgan('dev'));

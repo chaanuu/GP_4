@@ -12,4 +12,7 @@ router.put('/:id', FoodController.updateFood);
 
 router.delete('/:id', FoodController.deleteFood);
 
+router.delete('/user/:userid', FoodController.deleteUserFoods);
+
+
 export const foodRouter = router;

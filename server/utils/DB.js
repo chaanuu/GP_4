@@ -1,13 +1,14 @@
 import mysql2 from 'mysql2/promise';
+import 'dotenv/config';
 
 const dbConfig = {
-    host: 1,
-    user: 'root',
-    password: 'password',
-    database: 'healthcare',
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'mealfit_server',
+    password: process.env.DB_PASSWORD || 'secret',
+    database: process.env.DB_NAME || 'mealfit_db',
     waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+    connectionLimit: 10, // 동시에 허용할 최대 연결 수
+    queueLimit: 0        // 큐 대기열 무제한
 };
 
 /**
