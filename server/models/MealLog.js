@@ -1,5 +1,7 @@
 import { db } from "../utils/DB";
 
+import { DuplicateEntryError, NotFoundError } from "../utils/errors.js";
+
 export class MealLog {
     constructor({ userId, foodId, quantity, timeConsumed }) {
         this.id = null; // DB에 저장되면 설정됨
@@ -9,61 +11,82 @@ export class MealLog {
         this.timeConsumed = timeConsumed; // 섭취 날짜
     }
 
+    static #fromDB(row) {
+        if (!row) return null;
+
+        const mealLog = new MealLog({
+            userId: row.userId,
+            foodId: row.foodId,
+            quantity: row.quantity,
+            timeConsumed: row.timeConsumed
+        });
+        mealLog.id = row.id;
+        return mealLog;
+    }
+
     /**
      *
      * @returns  {Promise<MealLog>} 저장된 MealLog 객체 반환
      *
      */
     async save() {
+        const data = {
+            userId: this.userId,
+            foodId: this.foodId,
+            quantity: this.quantity,
+            timeConsumed: this.timeConsumed
+        };
+
         try {
-            await db.save('meal_logs', {
-                userId: this.userId,
-                foodId: this.foodId,
-                quantity: this.quantity,
-                timeConsumed: this.timeConsumed
-            }).then((result) => { this.id = result.insertId; });
+            if (this.id) {
+                // ID가 있으면 UPDATE
+                const result = await db.update('meal_logs', data, { id: this.id });
+                if (result.affectedRows === 0) {
+                    // 업데이트할 대상이 없음 (존재하지 않는 ID)
+                    throw new NotFoundError('MealLog not found during update');
+                }
+            } else {
+                // ID가 없으면 INSERT
+                const result = await db.create('meal_logs', data);
+                this.id = result.insertId;
+            }
+            return this;
+
         } catch (error) {
-            console.error('Error saving meal log on DB :', error);
+            // DB 에러가 "중복 키" 에러일 경우, 애플리케이션 에러로 변환
+            if (error.code === 'ER_DUP_ENTRY') {
+                throw new DuplicateEntryError('This meal log entry already exists.');
+            }
+            // 그 외 DB 에러는 그대로 상위로 전파
             throw error;
         }
-        return this;
 
     }
 
     static async getById(id) {
-        try {
-            return new MealLog(await db.read('meal_logs', { id: id }));
-        } catch (error) {
-            console.error('Error getting meal log by ID from DB :', error);
-            throw error;
+        const rows = await db.read('meal_logs', { id: id });
+        if (rows.length === 0) {
+            return null;
         }
-    }
+        return MealLog.#fromDB(rows[0]);
 
-    static async getAllByUserId(userId) {
-        try {
-            const rows = await db.read('meal_logs', { userId: userId });
-            return rows.map(row => new MealLog(row));
-        } catch (error) {
-            console.error('Error getting meal logs by user ID from DB :', error);
-            throw error;
-        }
     }
 
     static async deleteById(id) {
-        try {
-            return db.delete('meal_logs', { id: id });
-        } catch (error) {
-            console.error('Error deleting meal log by ID from DB :', error);
-            throw error;
+        const result = await db.delete('meal_logs', { id: id });
+        if (result.affectedRows === 0) {
+            throw new NotFoundError('MealLog not found during delete');
         }
+        return true;
+    }
+
+    static async getAllByUserId(userId) {
+        const rows = await db.read('meal_logs', { userId: userId });
+        return rows.map(row => MealLog.#fromDB(row));
     }
 
     static async deleteAllByUserId(userId) {
-        try {
-            return db.delete('meal_logs', { userId: userId });
-        } catch (error) {
-            console.error('Error deleting meal logs by user ID from DB :', error);
-            throw error;
-        }
+        await db.delete('meal_logs', { userId: userId });
+        return true;
     }
 }
