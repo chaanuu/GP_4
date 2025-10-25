@@ -23,7 +23,7 @@ export class MealLogService {
         mealLog.foodId = data.foodId || mealLog.foodId;
         mealLog.mealType = data.mealType || mealLog.mealType;
         mealLog.quantity = data.quantity || mealLog.quantity;
-        mealLog.dateConsumed = data.dateConsumed || mealLog.dateConsumed;
+        mealLog.timeConsumed = data.timeConsumed || mealLog.timeConsumed;
 
         return await mealLog.save();
     }
