@@ -1,55 +1,40 @@
-import { MealLog } from "../models/MealLog";
+import { MealLogService } from "../services/MealLogService";
 
 export class MealLogController {
 
-    static async getUserMealLogs(req, res) {
-        try {
-            const mealLogs = await MealLog.getAllByUserId(req.params.uid);
-            if (mealLogs) {
-                res.status(200).json(mealLogs);
-            } else {
-                res.status(404).json({ error: 'Meal logs not found' });
-            }
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
+    static async createMealLog(req, res) {
+        const newMealLog = await MealLogService.createMealLog(req.body);
+        res.status(201).json(newMealLog);
     }
 
-    static async addMealLog(req, res) {
-        try {
-            const newMealLog = new MealLog({
-                userId: req.body.userId,
-                foodId: req.body.foodId,
-                quantity: req.body.quantity,
-                timeConsumed: req.body.timeConsumed
-            });
-            const savedMealLog = await newMealLog.save();
-            res.status(201).json(savedMealLog);
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
+    static async getMealLogById(req, res) {
+        const mealLog = await MealLogService.getMealLogById(req.params.id);
+        res.status(200).json(mealLog);
+    }
+
+    static async updateMealLog(req, res) {
+        const updatedMealLog = await MealLogService.updateMealLog(req.params.id, req.body);
+        res.status(200).json(updatedMealLog);
     }
 
     static async deleteMealLog(req, res) {
-        try {
-            const mealLog = await MealLog.getById(req.params.id);
-            if (mealLog) {
-                await MealLog.deleteById(req.params.id);
-                res.sendStatus(204);
-            } else {
-                res.status(404).json({ error: 'Meal log not found' });
-            }
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
+        await MealLogService.deleteMealLog(req.params.id);
+        res.sendStatus(204);
     }
 
-    static async deleteUserMealLogs(req, res) {
-        try {
-            await MealLog.deleteAllByUserId(req.params.userid);
-            res.sendStatus(204);
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
+    static async getAllMealLogsByUserId(req, res) {
+        const mealLogs = await MealLogService.getAllMealLogsByUserId(req.params.userId);
+        res.status(200).json(mealLogs);
     }
+
+    static async getMealLogsByDateRange(req, res) {
+        const mealLogs = await MealLogService.getMealLogsByDateRange(
+            req.params.userId,
+            req.params.startDate,
+            req.params.endDate
+        );
+        res.status(200).json(mealLogs);
+    }
+
+
 }

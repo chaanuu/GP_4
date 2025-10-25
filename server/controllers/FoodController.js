@@ -1,5 +1,5 @@
-import { Food } from "../models/Food.js";
-import { PythonProcess } from "../utils/PythonProcess.js";
+import { FoodService } from "../services/FoodService.js";
+import { PythonProcess } from '../utils/PythonProcess.js';
 
 export class FoodController {
 
@@ -14,57 +14,32 @@ export class FoodController {
         }
     }
 
-
-    static async getUserFoods(req, res) {
-        try {
-            const foods = await Food.getAllByUserId(req.params.uid);
-            if (foods) {
-                res.status(200).json(foods);
-            } else {
-                res.status(404).json({ error: 'Foods not found' });
-            }
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
+    static async getFoodById(req, res) {
+        const food = await FoodService.getFoodById(req.params.id);
+        res.status(200).json(food);
     }
 
-    static async addFood(req, res) {
-        try {
-            const newFood = new Food(
-                req.body.name,
-                req.body.kcal,
-                req.body.carb,
-                req.body.protein,
-                req.body.fat,
-                req.body.userId
-            );
-            const savedFood = await newFood.save();
-            res.status(201).json(savedFood);
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
+    static async getAllFoods(req, res) {
+        const foods = await FoodService.getAllFoods();
+        res.status(200).json(foods);
+    }
+
+    static async createFood(req, res) {
+        const newFood = await FoodService.createFood(req.body);
+        res.status(201).json(newFood);
+    }
+
+    static async updateFood(req, res) {
+        const updatedFood = await FoodService.updateFood(req.params.id, req.body);
+        res.status(200).json(updatedFood);
     }
 
     static async deleteFood(req, res) {
-        try {
-            const food = await Food.getById(req.params.id);
-            if (food) {
-                await food.delete();
-                res.sendStatus(204);
-            } else {
-                res.status(404).json({ error: 'Food not found' });
-            }
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
+        await FoodService.deleteFood(req.params.id);
+        res.sendStatus(204);
     }
 
-    static async deleteUserFoods(req, res) {
-        try {
-            await Food.deleteAllByUserId(req.params.userid);
-            res.sendStatus(204);
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    }
+
+
+
 }

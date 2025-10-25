@@ -1,60 +1,32 @@
-import { User } from "../models/User.js";
+import { UserService } from '../services/UserService.js';
+
 
 export class UserController {
 
     static async getUserById(req, res) {
-        const user = await User.getById(req.params.id).catch(err => {
-            res.status(500).send({ error: err.message });
-        });
-        if (user) {
-            res.status(200).json(user);
-        } else {
-            res.status(404).send({ error: 'User not found' });
-        }
+        const user = await UserService.getUserById(req.params.id);
+        res.status(200).json(user);
     }
 
     static async getAllUsers(req, res) {
-        res.status(200).json(await User.getAll().catch(err => {
-            res.status(500).send({ error: err.message });
-        }));
+        const users = await UserService.getAllUsers();
+        res.status(200).json(users);
     }
 
+    // TODO : Service 에서 인증 처리 추가
     static async createUser(req, res) {
-        res.status(201).json(await new User(req.body.name).save().catch(err => {
-            res.status(500).send({ error: err.message });
-        }));
+        const newUser = await UserService.registerUser(req.body.email, req.body.password);
+        res.status(201).json(newUser);
     }
 
     static async updateUser(req, res) {
-        await User.getById(req.params.id).then(user => {
-            if (user) {
-                // TODO : 필요한 다른 필드들도 여기에 추가
-                res.status(200).json(user);
-            } else {
-                res.status(404).send({ error: 'User not found' });
-            }
-        }).catch(err => {
-            res.status(500).send({ error: err.message });
-        });
-
+        const updatedUser = await UserService.updateUser(req.params.id, req.body);
+        res.status(200).json(updatedUser);
     }
 
-    static async deleteUser(req, res) {
-        await User.getById(req.params.id).then(async user => {
-            if (user) {
-                await user.delete().then(() => {
-                    res.sendStatus(204);
-                }).catch(err => {
-                    res.status(500).send({ error: err.message });
-                });
-            } else {
-                res.status(404).send({ error: 'User not found' });
-            }
-        }).catch(err => {
-            res.status(500).send({ error: err.message });
-        });
+    static async deleteUserById(req, res) {
+        await UserService.deleteUserById(req.params.email);
+        res.sendStatus(204);
     }
-
-
 
 }
