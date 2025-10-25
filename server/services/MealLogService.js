@@ -8,7 +8,7 @@ export class MealLogService {
         return await mealLog.save();
     }
 
-    static async getById(id) {
+    static async getMealLogById(id) {
         const mealLog = await MealLog.getById(id);
         if (!mealLog) {
             throw new NotFoundError('MealLog not found');
@@ -16,8 +16,9 @@ export class MealLogService {
         return mealLog;
     }
 
+
     static async updateMealLog(id, data) {
-        const mealLog = await this.getById(id);
+        const mealLog = await this.getMealLogById(id);
 
         mealLog.foodId = data.foodId || mealLog.foodId;
         mealLog.mealType = data.mealType || mealLog.mealType;
@@ -28,7 +29,7 @@ export class MealLogService {
     }
 
     static async deleteMealLog(id) {
-        const mealLog = await this.getById(id);
+        const mealLog = await this.getMealLogById(id);
         return await mealLog.delete();
     }
 
