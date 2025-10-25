@@ -59,3 +59,81 @@ export class UnauthorizedError extends AppError {
         super(message, 401);
     }
 }
+
+
+/**
+ * 
+ * 401 Unauthorized 에러
+ * Google OAuth 인증 실패 시 사용합니다.
+ */
+export class GoogleOAuthError extends AppError {
+    constructor(message = 'Google authentication failed') {
+        super(message, 401);
+    }
+}
+
+
+/**
+ * 
+ * 401 Unauthorized 에러
+ * Apple OAuth 인증 실패 시 사용합니다.
+ */
+export class GoogleOAuthError extends AppError {
+    constructor(message = 'Apple authentication failed') {
+        super(message, 401);
+    }
+}
+
+
+
+/**
+ * 
+ * 401 Unauthorized 에러
+ * 토큰 만료 시 사용합니다.
+ */
+export class TokenExpiredError extends AppError {
+    constructor(message = 'Token has expired') {
+        super(message, 401);
+    }
+}
+
+/**
+ * 
+ * 401 Unauthorized 에러
+ * 토큰이 유효하지 않을 때 사용합니다.
+ */
+export class TokenInvalidError extends AppError {
+    constructor(message = 'Token is invalid') {
+        super(message, 401);
+    }
+}
+
+/**
+ * 403 Forbidden 에러
+ * 권한이 없을 때 사용합니다.
+ */
+export class ForbiddenError extends AppError {
+    constructor(message = 'Access forbidden') {
+        super(message, 403);
+    }
+}
+
+/**
+ * 500 Internal Server Error
+ * 서버 내부 오류가 발생했을 때 사용합니다.
+ */
+export class InternalServerError extends AppError {
+    constructor(message = 'Internal server error') {
+        super(message, 500);
+    }
+}
+
+/**
+ * 503 Service Unavailable 에러
+ * 외부 서비스 장애 시 사용합니다.
+ */
+export class ServiceUnavailableError extends AppError {
+    constructor(message = 'Service unavailable') {
+        super(message, 503);
+    }
+}
