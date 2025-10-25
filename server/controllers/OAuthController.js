@@ -1,6 +1,6 @@
 import { verifyGoogleToken, verifyAppleToken } from "../utils/Oauth.js";
 import { db } from "../utils/DB.js";
-import { User } from "../models/User.js";
+import { User } from "../models/User/User.js";
 
 export class OAuthController {
     static async googleLogin(req, res) {

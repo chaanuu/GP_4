@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
-import { User } from '../models/User.js';
+import { User } from '../../models/User/User.js';
 
-import { NotFoundError } from '../utils/errors.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 const saltRounds = 10;
 

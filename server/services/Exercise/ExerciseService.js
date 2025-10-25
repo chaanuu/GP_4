@@ -1,6 +1,6 @@
-import { Exercise } from '../models/Exercise.js';
+import { Exercise } from '../../models/Exercise/Exercise.js';
 
-import { NotFoundError } from '../utils/errors.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 export class ExerciseService {
     static async createExercise(data) {

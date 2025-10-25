@@ -1,6 +1,6 @@
-import { db } from "../utils/DB";
+import { db } from "../../utils/DB.js";
 
-import { DuplicateEntryError, NotFoundError } from "../utils/errors.js";
+import { DuplicateEntryError, NotFoundError } from "../../utils/errors.js";
 
 export class MealLog {
     constructor({ userId, foodId, quantity, timeConsumed }) {

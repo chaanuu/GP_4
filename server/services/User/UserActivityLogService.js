@@ -1,6 +1,6 @@
-import { UserActivityLog } from '../models/UserActivityLog';
+import { UserActivityLog } from '../../models/User/UserActivityLog.js';
 
-import { NotFoundError } from '../utils/errors.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 export class UserActivityLogService {
     static async createUserActivityLog(data) {

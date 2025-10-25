@@ -1,6 +1,6 @@
-import { ExerciseLog } from '../models/ExerciseLog.js';
+import { ExerciseLog } from '../../models/Exercise/ExerciseLog.js';
 
-import { NotFoundError } from '../utils/errors.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 export class ExerciseLogService {
 

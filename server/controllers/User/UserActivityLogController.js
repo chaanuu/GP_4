@@ -1,4 +1,4 @@
-import { UserActivityLogService } from "../services/UserActivityLogService";
+import { UserActivityLogService } from "../../services/User/UserActivityLogService";
 
 export class UserActivityLogController {
     static async createUserActivityLog(req, res) {

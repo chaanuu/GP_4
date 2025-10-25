@@ -1,5 +1,5 @@
-import { FoodService } from "../services/FoodService.js";
-import { PythonProcess } from '../utils/PythonProcess.js';
+import { FoodService } from "../../services/Food/FoodService.js";
+import { PythonProcess } from '../../utils/PythonProcess.js';
 
 export class FoodController {
 

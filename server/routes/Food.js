@@ -1,5 +1,5 @@
 import express from 'express';
-import { FoodController } from '../controllers/FoodController';
+import { FoodController } from '../controllers/Food/FoodController';
 const router = express.Router();
 
 router.post('/img_anlysis', FoodController.analyzeFoodImage);

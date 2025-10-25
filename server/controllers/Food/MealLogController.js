@@ -1,4 +1,4 @@
-import { MealLogService } from "../services/MealLogService";
+import { MealLogService } from "../../services/Food/MealLogService";
 
 export class MealLogController {
 

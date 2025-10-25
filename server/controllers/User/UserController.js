@@ -1,4 +1,4 @@
-import { UserService } from '../services/UserService.js';
+import { UserService } from '../../services/User/UserService.js';
 
 
 export class UserController {

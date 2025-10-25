@@ -1,6 +1,6 @@
-import { Food } from '../models/Food.js';
+import { Food } from '../../models/Food/Food.js';
 
-import { NotFoundError } from '../utils/errors.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 export class FoodService {
     static async createFood(data) {

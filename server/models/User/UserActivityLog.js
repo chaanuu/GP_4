@@ -1,6 +1,6 @@
-import { db } from '../utils/DB.js';
+import { db } from '../../utils/DB.js';
 
-import { DuplicateEntryError, NotFoundError } from '../utils/errors.js';
+import { DuplicateEntryError, NotFoundError } from '../../utils/errors.js';
 
 export class UserActivityLog {
     constructor(userId, walkSteps, kcalBurned, date = new Date()) {

@@ -1,6 +1,6 @@
-import { db } from '../utils/DB.js';
+import { db } from '../../utils/DB.js';
 
-import { DuplicateEntryError, NotFoundError } from '../utils/errors.js';
+import { DuplicateEntryError, NotFoundError } from '../../utils/errors.js';
 
 export class Food {
     constructor({ name, kcal, carb, protein, fat, imgUrl, userId = null }) {

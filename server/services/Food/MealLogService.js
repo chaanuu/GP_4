@@ -1,6 +1,6 @@
-import { MealLog } from '../models/MealLog';
+import { MealLog } from '../../models/Food/MealLog.js';
 
-import { NotFoundError } from '../utils/errors.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 export class MealLogService {
     static async createMealLog(data) {

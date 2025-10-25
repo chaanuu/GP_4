@@ -1,4 +1,4 @@
-import { ExerciseLogService } from "../services/ExerciseLogService";
+import { ExerciseLogService } from "../../services/Exercise/ExerciseLogService";
 
 export class ExerciseLogController {
 

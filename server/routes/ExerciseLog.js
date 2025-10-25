@@ -1,4 +1,4 @@
-import { ExerciseLogController } from "../controllers/ExerciseController";
+import { ExerciseLogController } from "../controllers/Exercise/ExerciseController";
 
 import express from 'express';
 const router = express.Router();

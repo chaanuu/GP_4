@@ -1,6 +1,6 @@
-import { ExerciseService } from '../services/ExerciseService.js';
+import { ExerciseService } from '../../services/Exercise/ExerciseService.js';
 
-import { } from '../utils/errors.js';
+import { } from '../../utils/errors.js';
 
 export class ExerciseController {
 

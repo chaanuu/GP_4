@@ -1,6 +1,6 @@
-import { db } from '../utils/DB.js';
+import { db } from '../../utils/DB.js';
 
-import { DuplicateEntryError, NotFoundError } from '../utils/errors.js';
+import { DuplicateEntryError, NotFoundError } from '../../utils/errors.js';
 
 export class User {
     constructor(email, password_hash) {

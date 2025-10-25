@@ -1,4 +1,4 @@
-import { MealLogController } from "../controllers/MealLogController";
+import { MealLogController } from "../controllers/Food/MealLogController";
 
 import express from 'express';
 const router = express.Router();
