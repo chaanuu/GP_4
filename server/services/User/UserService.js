@@ -25,7 +25,7 @@ export class UserService {
 
 
     // create 
-    static async registerUser(username, password) {
+    static async registerUser(email, password) {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
         const result = await new User(username, hashedPassword).save();
         return { id: result.insertId, username };
