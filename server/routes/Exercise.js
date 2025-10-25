@@ -3,7 +3,7 @@ import express from 'express';
 const router = express.Router();
 
 router.get('/user/:uid', ExerciseController.getAllUserExercises);
-router.post('/', ExerciseController.addExercise);
+router.post('/', ExerciseController.createExercise);
 router.delete('/:id', ExerciseController.deleteExercise);
 router.delete('/user/:userid', ExerciseController.deleteUserExercises);
 router.get('/user/:uid/date/:date', ExerciseController.getAllUserExercisesByDate);
