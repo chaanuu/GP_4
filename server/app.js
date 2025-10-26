@@ -13,7 +13,7 @@ import 'dotenv/config.js';
 import helmet from 'helmet';
 
 // Auth Middleware
-import { authMiddleware } from './middlewares/AuthMiddleware.js';
+import { authMiddleware } from './middlewares/authMiddleware.js';
 
 
 // routes
