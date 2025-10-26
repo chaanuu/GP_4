@@ -22,4 +22,20 @@ export class JwtService {
         return JWT.verify(token, process.env.JWT_ACCESS_SECRET);
     }
 
+    static async verifyRefreshToken(token) {
+        return JWT.verify(token, process.env.JWT_REFRESH_SECRET);
+    }
+
+    static async getUserIdFromRefreshToken(token) {
+        const userId = await sessionClient.get(token);
+        return userId;
+    }
+
+    static async revokeRefreshToken(token) {
+        await sessionClient.del(token);
+    }
+
+
+
+
 }
