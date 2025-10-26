@@ -15,8 +15,6 @@ import helmet from 'helmet';
 // Auth Middleware
 import { authMiddleware } from './middlewares/AuthMiddleware.js';
 
-// Auth Controller
-import { AuthController } from './controllers/AuthController.js';
 
 // routes
 import { userRouter } from './routes/User.js';
@@ -24,6 +22,7 @@ import { exerciseRouter } from './routes/Exercise.js';
 import { foodRouter } from './routes/Food.js';
 import { exerciseLogRouter } from './routes/ExerciseLog.js';
 import { mealLogRouter } from './routes/MealLog.js';
+import { authRouter } from './routes/Auth.js';
 
 const port = process.env.PORT || 3000;
 
@@ -81,10 +80,7 @@ RedisClient.getSessionClient(redisConfig);
 
 
 // 인증 라우트 설정
-app.post('/auth/login', AuthController.login);
-app.post('/auth/refresh', AuthController.refreshToken);
-app.post('/auth/logout', AuthController.logout);
-
+app.use('/auth', authRouter);
 
 // 인증 미들웨어 설정
 app.use('/api', authMiddleware);

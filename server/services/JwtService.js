@@ -35,7 +35,4 @@ export class JwtService {
         await sessionClient.del(token);
     }
 
-
-
-
 }
