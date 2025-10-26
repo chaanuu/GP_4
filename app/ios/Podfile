@@ -1,0 +1,62 @@
+# Uncomment this line to define a global platform for your project
+# platform :ios, '13.0'
+
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks!
+  pod 'GoogleUtilities', '~> 8.0'
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+# Podfile의 끝 부분에 추가합니다.
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    
+    # [핵심] 충돌이 발생하는 Google 라이브러리의 버전을 강제로 최신으로 통일
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'PERMISSION_PHOTOS=1']
+      # 이 줄을 추가하여 모든 Google 종속성 버전을 일치시키도록 강제합니다.
+      config.build_settings['OTHER_LDFLAGS'] = [
+        '$(inherited)',
+        '-framework', 'FirebaseCore',
+        '-framework', 'FirebaseInstallations',
+        '-framework', 'GoogleUtilities' # GoogleUtilities 충돌 해결 시도
+      ]
+      
+      # 특정 Pods의 버전을 명시적으로 오버라이드 (추가적인 방법)
+      # pod 'GoogleUtilities/UserDefaults', '~> 8.0'
+    end
+  end
+end
+
+
