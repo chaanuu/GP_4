@@ -88,6 +88,9 @@ app.use('/api', authMiddleware);
 // 라우터 설정
 app.use('/api', router);
 
+// 업로드된 파일을 제공 (대부분 이미지)
+app.use('/uploads', express.static('uploads'));
+
 
 
 // 서버 종료 이벤트를 처리하는 함수
