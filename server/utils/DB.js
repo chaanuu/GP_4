@@ -1,15 +1,9 @@
 import mysql2 from 'mysql2/promise';
-import 'dotenv/config';
+import config from '../config.js';
 
-const dbConfig = {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'mealfit_server',
-    password: process.env.DB_PASSWORD || 'secret',
-    database: process.env.DB_NAME || 'mealfit_db',
-    waitForConnections: true,
-    connectionLimit: 10, // 동시에 허용할 최대 연결 수
-    queueLimit: 0        // 큐 대기열 무제한
-};
+
+
+const dbConfig = config.db;
 
 /**
  * MySQL 데이터베이스 관리를 위한 클래스.
@@ -154,7 +148,8 @@ class DB {
     }
 }
 
-export const db = new DB();
+export const db = new DB(dbConfig);
 // TODO : 테이블 초기화 (없으면 초기파일 불러오기) 코드 작성
-db.getConnection().tableExists('users').then(res => console.log(res)).catch(err => console.error(err));
-db.getConnection().tableExists('foods').then(res => console.log(res)).catch(err => console.error(err));
+const conn = await db.getConnection();
+db.tableExists('users').then(res => console.log(res)).catch(err => console.error(err));
+db.tableExists('foods').then(res => console.log(res)).catch(err => console.error(err));

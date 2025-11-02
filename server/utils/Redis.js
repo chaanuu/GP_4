@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import config from '../config.js';
 
 let cacheClient;
 let sessionClient;
@@ -55,3 +56,12 @@ export class RedisClient {
         return sessionClient;
     }
 }
+
+const redisConfig = config.redis;
+
+// 싱글톤 Redis 클라이언트 초기화 : 기본 캐시용
+RedisClient.getCacheClient(config.redis);
+
+// 싱글톤 Redis 클라이언트 초기화 : 세션 관리용
+redisConfig.db = 1;
+RedisClient.getSessionClient(config.redis);

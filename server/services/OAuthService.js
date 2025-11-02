@@ -1,10 +1,10 @@
 import { OAuth2Client } from 'google-auth-library';
 import appleSignin from 'apple-signin-auth';
+import config from '../config.js';
 
 // .env 파일 등에 환경 변수를 설정해야 합니다.
 // 예: GOOGLE_CLIENT_ID=your_google_client_id
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID);
 
 /**
  * Google ID 토큰을 검증하고 사용자 정보를 반환합니다.

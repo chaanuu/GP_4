@@ -1,3 +1,5 @@
+import config from './config.js';
+
 import 'express-async-errors';
 import express from 'express';
 import { RedisClient } from './utils/Redis.js';
@@ -6,8 +8,6 @@ import { RedisClient } from './utils/Redis.js';
 // Logger Middleware
 import morgan from 'morgan';
 
-// dotenv
-import 'dotenv/config.js';
 
 // Security middleware
 import helmet from 'helmet';
@@ -24,7 +24,7 @@ import { exerciseLogRouter } from './routes/ExerciseLog.js';
 import { mealLogRouter } from './routes/MealLog.js';
 import { authRouter } from './routes/Auth.js';
 
-const port = process.env.PORT || 3000;
+const port = config.port || 3000;
 
 const app = express();
 const router = express.Router();
@@ -64,18 +64,6 @@ const server = app.listen(port, () => {
 
 
 
-const redisConfig = {
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
-    password: process.env.REDIS_PASSWORD,
-    db: 0,
-};
-
-// 싱글톤 Redis 클라이언트 초기화
-RedisClient.getCacheClient(redisConfig);
-
-redisConfig.db = 1;
-RedisClient.getSessionClient(redisConfig);
 
 
 
