@@ -1,4 +1,4 @@
-import { JWT } from 'jsonwebtoken';
+import JWT from 'jsonwebtoken';
 import { RedisClient } from '../utils/Redis';
 
 const sessionClient = RedisClient.getSessionClient();
