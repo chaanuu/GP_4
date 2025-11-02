@@ -41,3 +41,11 @@ server/*.log
 
 # Dependencies
 server/node_modules
+
+# Python venv
+server/venv/
+server/.venv/
+
+# Jest coverage
+server/coverage/
+
