@@ -76,19 +76,6 @@ export class GoogleOAuthError extends AppError {
 /**
  * 
  * 401 Unauthorized 에러
- * Apple OAuth 인증 실패 시 사용합니다.
- */
-export class GoogleOAuthError extends AppError {
-    constructor(message = 'Apple authentication failed') {
-        super(message, 401);
-    }
-}
-
-
-
-/**
- * 
- * 401 Unauthorized 에러
  * 토큰 만료 시 사용합니다.
  */
 export class TokenExpiredError extends AppError {
