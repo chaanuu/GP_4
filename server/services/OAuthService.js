@@ -1,5 +1,5 @@
 import { OAuth2Client } from 'google-auth-library';
-import { appleSignin } from 'apple-signin-auth';
+import appleSignin from 'apple-signin-auth';
 
 // .env 파일 등에 환경 변수를 설정해야 합니다.
 // 예: GOOGLE_CLIENT_ID=your_google_client_id
