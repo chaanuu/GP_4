@@ -26,6 +26,11 @@ const config = {
         waitForConnections: true,
         connectionLimit: 10, // 동시에 허용할 최대 연결 수
         queueLimit: 0        // 큐 대기열 무제한
+    },
+
+    oauth: {
+        googleClientId: process.env.GOOGLE_CLIENT_ID,
+        appleClientId: process.env.APPLE_CLIENT_ID
     }
 };
 

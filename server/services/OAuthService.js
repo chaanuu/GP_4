@@ -2,6 +2,8 @@ import { OAuth2Client } from 'google-auth-library';
 import appleSignin from 'apple-signin-auth';
 import config from '../config.js';
 
+const oauthConfig = config.oauth;
+
 // .env 파일 등에 환경 변수를 설정해야 합니다.
 // 예: GOOGLE_CLIENT_ID=your_google_client_id
 const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID);
@@ -17,7 +19,7 @@ export class OAuthService {
         try {
             const ticket = await googleClient.verifyIdToken({
                 idToken,
-                audience: GOOGLE_CLIENT_ID,
+                audience: oauthConfig.googleClientId,
             });
             const payload = ticket.getPayload();
             if (!payload) {
