@@ -25,9 +25,10 @@ export class UserService {
 
 
     // create 
-    static async registerUser(email, hashedPassword, name) {
-        const result = await new User(username, hashedPassword, name).save();
-        return { id: result.insertId, username };
+    static async registerUser(email, password, name) {
+        const hashedPassword = await this.hashPassword(password);
+        const result = await new User(email, hashedPassword, name).save();
+        return { id: result.insertId, email, name };
     }
 
 
