@@ -131,3 +131,26 @@ export class ServiceUnavailableError extends AppError {
         super(message, 503);
     }
 }
+
+/**
+ * 500 Internal Server Error
+ * Python 프로세스 실행 실패 시 사용합니다.
+ * 예: Python 스크립트 오류, 실행 불가 등
+ */
+export class PythonProcessError extends AppError {
+    constructor(message = 'Python process execution failed') {
+        super(message, 500);
+    }
+}
+
+
+/**
+ * 404 Not Found 에러
+ * 파일을 찾을 수 없을 때 사용합니다.
+ * 예: 이미지 파일 미존재 등
+ */
+export class FileNotFoundError extends AppError {
+    constructor(message = 'File not found') {
+        super(message, 404);
+    }
+}
