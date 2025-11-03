@@ -144,7 +144,7 @@ class DB {
      */
     async close() {
         await this.pool.end();
-        console.log('데이터베이스 커넥션 풀이 종료되었습니다.');
+        console.log('Database Connection Pool has terminated.');
     }
 }
 

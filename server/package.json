@@ -26,6 +26,7 @@
     "express-async-errors": "^3.1.1",
     "google-auth-library": "^10.4.0",
     "helmet": "^8.1.0",
+    "http-terminator": "^3.2.0",
     "ioredis": "^5.8.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",

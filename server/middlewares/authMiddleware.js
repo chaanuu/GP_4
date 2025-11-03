@@ -1,4 +1,5 @@
 import { JwtService } from "../services/Auth/JwtService.js";
+import { UnauthorizedError } from "../utils/errors.js";
 
 export const authMiddleware = async (req, res, next) => {
     try {
@@ -6,7 +7,7 @@ export const authMiddleware = async (req, res, next) => {
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             // 401 에러 객체를 생성하여 next로 전달
-            const error = new Error('Authorization header missing or malformed');
+            const error = new UnauthorizedError('Authorization header missing or malformed');
             error.status = 401; // 에러 핸들러가 참조할 상태 코드
             error.code = 'AUTH_HEADER_MISSING';
             return next(error);

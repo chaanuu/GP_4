@@ -3,8 +3,12 @@ import config from './config.js';
 // next(error) 지원 (비동기 에러 처리 다 넘길 필요 없음)
 import 'express-async-errors';
 import express from 'express';
-import { RedisClient } from './utils/Redis.js';
 
+import { RedisClient } from './utils/Redis.js';
+import { db } from './utils/DB.js';
+
+// Helper for graceful shutdown
+import { createHttpTerminator } from 'http-terminator';
 
 // Logger Middleware
 import morgan from 'morgan';
@@ -46,23 +50,14 @@ app.use(express.json());
 app.use(helmet());
 
 
-// Error Handling Middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    const status = err.status || 500;
-    res.status(status).json({
-        error: {
-            message: err.message,
-            code: err.code || 'INTERNAL_SERVER_ERROR'
-        }
-    });
-});
 
 // 서버 시작
 const server = app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
 
+// HTTP Terminator 생성
+const httpTerminator = createHttpTerminator({ server });
 
 
 
@@ -82,20 +77,41 @@ app.use('/uploads', express.static('uploads'));
 
 
 
-// 서버 종료 이벤트를 처리하는 함수
-const shutdown = () => {
-    console.log('Server is shutting down...');
-    // 데이터베이스 연결 종료, 파일 저장 등 마무리 작업
-    server.close(() => {
-        console.log('HTTP server closed.');
-        // 프로세스 종료
-        process.exit(0);
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    const status = err.status || 500;
+    res.status(status).json({
+        error: {
+            message: err.message,
+            code: err.code || 'INTERNAL_SERVER_ERROR'
+        }
     });
+});
+
+
+
+
+const gracefulShutdown = async (signal) => {
+    console.log(`\nReceived ${signal}. Shutting down gracefully...`);
+
+    // 1. HTTP 서버 연결 종료
+    await httpTerminator.terminate();
+    console.log('HTTP server closed.');
+
+    // 2. 데이터베이스 연결 종료
+    await db.close(); // db.close()는 DB 유틸리티에 구현해야 합니다.
+    // 3. Redis 연결 종료 (사용하는 경우)
+    await RedisClient.disconnectAll();
+    console.log('All Redis Client closed.');
+
+    process.exit(0); // 모든 연결이 닫히면 프로세스 종료
+
 };
 
 // SIGINT (Ctrl+C) 신호 감지
-process.on('SIGINT', shutdown);
+process.on('SIGINT', gracefulShutdown);
 
 // SIGTERM (kill) 신호 감지
-process.on('SIGTERM', shutdown);
+process.on('SIGTERM', gracefulShutdown);
 

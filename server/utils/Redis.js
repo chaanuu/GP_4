@@ -55,6 +55,17 @@ export class RedisClient {
         }
         return sessionClient;
     }
+
+    static async disconnectAll() {
+        if (cacheClient) {
+            await cacheClient.quit();
+            console.log('Cache Redis client disconnected.');
+        }
+        if (sessionClient) {
+            await sessionClient.quit();
+            console.log('Session Redis client disconnected.');
+        }
+    }
 }
 
 const redisConfig = config.redis;
