@@ -3,13 +3,13 @@ import { db } from '../../utils/DB.js';
 import { DuplicateEntryError, NotFoundError } from '../../utils/errors.js';
 
 export class ExerciseLog {
-    constructor({ userId, exerciseId, reps, sets, dateExecuted, durationMinutes, caloriesBurned }) {
+    constructor({ userId, exerciseId, reps, sets, timeExecuted, durationMinutes, caloriesBurned }) {
         this.id = null; // DB에 저장되면 설정됨
         this.userId = userId;
         this.exerciseId = exerciseId;
         this.reps = reps; // 반복 횟수
         this.sets = sets; // 세트 수
-        this.dateExecuted = dateExecuted; // 운동 수행 날짜
+        this.timeExecuted = timeExecuted; // 운동 수행 시각
         this.durationMinutes = durationMinutes; // 운동 지속 시간 (분)
         this.caloriesBurned = caloriesBurned; // 소모 칼로리
     }
@@ -25,7 +25,7 @@ export class ExerciseLog {
             exerciseId: this.exerciseId,
             reps: this.reps,
             sets: this.sets,
-            dateExecuted: this.dateExecuted,
+            timeExecuted: this.timeExecuted,
             durationMinutes: this.durationMinutes,
             caloriesBurned: this.caloriesBurned
         };
@@ -71,7 +71,7 @@ export class ExerciseLog {
         exerciseLog.exerciseId = updateData.exerciseId || exerciseLog.exerciseId;
         exerciseLog.reps = updateData.reps || exerciseLog.reps;
         exerciseLog.sets = updateData.sets || exerciseLog.sets;
-        exerciseLog.dateExecuted = updateData.dateExecuted || exerciseLog.dateExecuted;
+        exerciseLog.timeExecuted = updateData.timeExecuted || exerciseLog.timeExecuted;
         exerciseLog.durationMinutes = updateData.durationMinutes || exerciseLog.durationMinutes;
         exerciseLog.caloriesBurned = updateData.caloriesBurned || exerciseLog.caloriesBurned;
         return await exerciseLog.save();
@@ -100,19 +100,30 @@ export class ExerciseLog {
         return true;
     }
 
-    static async getAllByUserIdAndDate(userId, dateExecuted) {
-        const query = 'SELECT * FROM exercise_logs WHERE userId = ? AND dateExecuted = ?';
-        const rows = await db.query(query, [userId, dateExecuted]);
+    static async getAllByUserIdAndDate(userId, date) {
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const query = 'SELECT * FROM exercise_logs WHERE userId = ? AND timeExecuted BETWEEN ? AND ?';
+        const rows = await db.query(query, [userId, startOfDay, endOfDay]);
         if (!rows || rows.length === 0) {
             return [];
         }
         return rows.map(row => new ExerciseLog(row));
-
     }
 
     static async getAllByUserIdAndDateRange(userId, startDate, endDate) {
-        const query = 'SELECT * FROM exercise_logs WHERE userId = ? AND dateExecuted BETWEEN ? AND ?';
-        const rows = await db.query(query, [userId, startDate, endDate]);
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+
+        const query = 'SELECT * FROM exercise_logs WHERE userId = ? AND timeExecuted BETWEEN ? AND ?';
+        const rows = await db.query(query, [userId, start, end]);
         if (!rows || rows.length === 0) {
             return [];
         }
@@ -120,8 +131,14 @@ export class ExerciseLog {
     }
 
     static async calculateTotalCaloriesBurned(userId, startDate, endDate) {
-        const query = 'SELECT SUM(caloriesBurned) AS totalCalories FROM exercise_logs WHERE userId = ? AND dateExecuted BETWEEN ? AND ?';
-        const rows = await db.query(query, [userId, startDate, endDate]);
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+
+        const query = 'SELECT SUM(caloriesBurned) AS totalCalories FROM exercise_logs WHERE userId = ? AND timeExecuted BETWEEN ? AND ?';
+        const rows = await db.query(query, [userId, start, end]);
         if (!rows || rows.length === 0 || rows[0].totalCalories === null) {
             return 0;
         }
@@ -129,14 +146,15 @@ export class ExerciseLog {
     }
 
     static async calculateTotalTirednessOfUsedMuscles(userId, startDate, endDate, muscles) {
-        // Mainmuscle과 Submuscle의 tiredness 합산
-        // Log의 Mainmuscle과 Submuscle이 나타나는 빈도의 계산
-        // Mainmuscle 은 2 배, Submuscle 은 1 배 가중치 적용
-        // 근육 : 최종 가중치 반환
-
         if (!muscles || muscles.length === 0) {
             return {};
         }
+
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
 
         const query = `
             SELECT 
@@ -146,29 +164,27 @@ export class ExerciseLog {
                 SELECT mainMuscle AS muscle, 2 AS tiredness
                 FROM exercise_logs el
                 JOIN exercises e ON el.exerciseId = e.id
-                WHERE el.userId = ? AND el.dateExecuted BETWEEN ? AND ?
+                WHERE el.userId = ? AND el.timeExecuted BETWEEN ? AND ?
                 
                 UNION ALL
                 
                 SELECT subMuscle AS muscle, 1 AS tiredness
                 FROM exercise_logs el
                 JOIN exercises e ON el.exerciseId = e.id
-                WHERE el.userId = ? AND el.dateExecuted BETWEEN ? AND ?
+                WHERE el.userId = ? AND el.timeExecuted BETWEEN ? AND ?
             ) AS muscle_tiredness
             WHERE muscle IN (?)
             GROUP BY muscle;
         `;
 
-        const params = [userId, startDate, endDate, userId, startDate, endDate, muscles];
+        const params = [userId, start, end, userId, start, end, muscles];
         const rows = await db.query(query, params);
 
         const muscleWeights = {};
-        // 요청된 모든 근육에 대해 0으로 초기화
         for (const muscle of muscles) {
             muscleWeights[muscle] = 0;
         }
 
-        // DB에서 계산된 값으로 업데이트
         for (const row of rows) {
             muscleWeights[row.muscle] = row.totalTiredness;
         }

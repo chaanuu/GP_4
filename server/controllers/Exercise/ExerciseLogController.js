@@ -17,15 +17,29 @@ export class ExerciseLogController {
         res.status(200).json(updatedExerciseLog);
     }
 
-    static async deleteExerciseLog(req, res) {
+    static async deleteExerciseLogById(req, res) {
         await ExerciseLogService.deleteExerciseLog(req.params.id);
         res.sendStatus(204);
     }
 
+    static async deleteAllExerciseLogsByUserId(req, res) {
+        await ExerciseLogService.deleteAllExerciseLogsByUserId(req.params.userId);
+        res.sendStatus(204);
+    }
+
     static async getAllExerciseLogsByUserId(req, res) {
-        const exerciseLogs = await ExerciseLogService.getAllExerciseLogsByUserId(req.params.userId);
+        const exerciseLogs = await ExerciseLogService.getExerciseLogsByUserId(req.params.userId);
         res.status(200).json(exerciseLogs);
     }
+
+    static async getAllExerciseLogsByDate(req, res) {
+        const exerciseLogs = await ExerciseLogService.getExerciseLogsByDate(
+            req.params.userId,
+            req.params.date
+        );
+        res.status(200).json(exerciseLogs);
+    }
+
 
     static async getExerciseLogsByDateRange(req, res) {
         const exerciseLogs = await ExerciseLogService.getExerciseLogsByDateRange(
