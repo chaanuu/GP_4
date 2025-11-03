@@ -68,7 +68,7 @@ export class ExerciseLogService {
 
 
     static async getExerciseLogsByDateRange(userId, startDate, endDate) {
-        return await ExerciseLog.getByDateRange(userId, startDate, endDate);
+        return await ExerciseLog.getAllByUserIdAndDateRange(userId, startDate, endDate);
     }
 
     static async getTotalCaloriesBurned(userId, startDate, endDate) {
