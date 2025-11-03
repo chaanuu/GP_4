@@ -132,7 +132,7 @@ class DB {
 
     async tableExists(table) {
         const sql = `SELECT COUNT(*) FROM information_schema.TABLES
-                    WHERE TABLE_SCHEMA = ${dbConfig.database} 
+                    WHERE TABLE_SCHEMA = '${dbConfig.database}' 
                     AND TABLE_NAME = '${table}'`;
         const ret = await this.query(sql, []);
         return ret;
