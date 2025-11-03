@@ -35,7 +35,7 @@ export class FoodController {
     }
 
     static async deleteFood(req, res) {
-        await FoodService.deleteFood(req.params.id);
+        await FoodService.deleteFoodById(req.params.id);
         res.sendStatus(204);
     }
 

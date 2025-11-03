@@ -63,7 +63,7 @@ export class ExerciseLogService {
     }
 
     static async getExerciseLogsByDate(userId, date) {
-        return await ExerciseLog.getByDate(userId, date);
+        return await ExerciseLog.getAllByUserIdAndDate(userId, date);
     }
 
 

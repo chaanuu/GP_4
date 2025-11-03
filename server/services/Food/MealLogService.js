@@ -37,8 +37,15 @@ export class MealLogService {
         return await MealLog.getAllByUserId(userId);
     }
 
+    static async getMealLogsByDate(userId, date) {
+        return await MealLog.getByDate(userId, date);
+    }
+
     static async getMealLogsByDateRange(userId, startDate, endDate) {
         return await MealLog.getByDateRange(userId, startDate, endDate);
     }
 
+    static async deleteAllMealLogsByUserId(userId) {
+        return await MealLog.deleteAllByUserId(userId);
+    }
 }

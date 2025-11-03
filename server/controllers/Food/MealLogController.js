@@ -1,4 +1,4 @@
-import { MealLogService } from "../../services/Food/MealLogService";
+import { MealLogService } from '../../services/Food/MealLogService.js';
 
 export class MealLogController {
 
@@ -27,6 +27,15 @@ export class MealLogController {
         res.status(200).json(mealLogs);
     }
 
+    static async getMealLogsByDate(req, res) {
+        const mealLogs = await MealLogService.getMealLogsByDate(
+            req.params.userId,
+            req.params.date
+        );
+        res.status(200).json(mealLogs);
+    }
+
+
     static async getMealLogsByDateRange(req, res) {
         const mealLogs = await MealLogService.getMealLogsByDateRange(
             req.params.userId,
@@ -36,5 +45,9 @@ export class MealLogController {
         res.status(200).json(mealLogs);
     }
 
+    static async deleteAllMealLogsByUserId(req, res) {
+        await MealLogService.deleteAllMealLogsByUserId(req.params.userId);
+        res.sendStatus(204);
+    }
 
 }
