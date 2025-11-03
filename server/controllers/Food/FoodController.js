@@ -19,8 +19,8 @@ export class FoodController {
         res.status(200).json(food);
     }
 
-    static async getAllFoods(req, res) {
-        const foods = await FoodService.getAllFoods();
+    static async getAllFoodsByUserId(req, res) {
+        const foods = await FoodService.getAllFoodsByUserId(req.params.userId);
         res.status(200).json(foods);
     }
 
@@ -36,6 +36,11 @@ export class FoodController {
 
     static async deleteFood(req, res) {
         await FoodService.deleteFood(req.params.id);
+        res.sendStatus(204);
+    }
+
+    static async deleteAllFoodsByUserId(req, res) {
+        await FoodService.deleteAllFoodsByUserId(req.params.userId);
         res.sendStatus(204);
     }
 

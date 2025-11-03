@@ -37,5 +37,9 @@ export class FoodService {
         return await Food.getAllByUserId(userId);
     }
 
+    static async deleteAllFoodsByUserId(userId) {
+        return await Food.deleteAllByUserId(userId);
+    }
+
 
 }
