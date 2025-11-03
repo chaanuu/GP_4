@@ -1,5 +1,6 @@
 import config from './config.js';
 
+// next(error) 지원 (비동기 에러 처리 다 넘길 필요 없음)
 import 'express-async-errors';
 import express from 'express';
 import { RedisClient } from './utils/Redis.js';
