@@ -49,3 +49,5 @@ server/.venv/
 # Jest coverage
 server/coverage/
 
+# User uploads
+server/uploads/
