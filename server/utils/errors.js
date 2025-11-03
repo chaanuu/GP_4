@@ -72,6 +72,13 @@ export class GoogleOAuthError extends AppError {
     }
 }
 
+export class AppleOAuthError extends AppError {
+    constructor(message = 'Apple authentication failed') {
+        super(message, 401);
+    }
+}
+
+
 
 /**
  * 
