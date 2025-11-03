@@ -8,7 +8,7 @@ import { GoogleOAuthError, AppleOAuthError, InternalServerError, NotFoundError, 
 import { AuthService } from '../services/Auth/AuthService.js';
 
 export class AuthController {
-    static async localLogin(req, res) {
+    static async login(req, res) {
         const { email } = req.body;
 
         // TODO: 실제 검증 로직 추가해서 미들웨어로 분리할 것
@@ -71,37 +71,6 @@ export class AuthController {
             console.error('Error refreshing tokens:', error);
             return res.status(401).json({ message: 'Invalid refresh token' });
         });
-    }
-
-    static async logout(req, res) {
-        const refreshToken = req.cookies.refreshToken;
-        if (!refreshToken) {
-            return res.status(400).json({ message: 'Refresh token is required' });
-        }
-
-        try {
-            await sessionClient.del(refreshToken);
-            res.clearCookie('refreshToken');
-
-            return res.status(200).json({ message: 'Logged out successfully' });
-        } catch (error) {
-            console.error('Error during logout:', error);
-            return res.status(500).json({ message: 'Internal server error' });
-        }
-    }
-
-
-    static async googleLogin(req, res) {
-        const { idToken } = req.body;
-        const newTokens = await AuthService.googleLogin(idToken);
-        return res.status(200).json({ message: "Google Login successful", newTokens });
-    }
-
-
-    static async appleLogin(req, res) {
-        const { idToken } = req.body;
-        const newTokens = await AuthService.appleLogin(idToken);
-        return res.status(200).json({ message: "Apple Login successful", newTokens });
     }
 
 }
