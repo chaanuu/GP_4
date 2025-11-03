@@ -13,7 +13,15 @@ export class ExerciseLogService {
         durationMinutes,
         caloriesBurned
     }) {
-        const exerciseLog = new ExerciseLog(data);
+        const exerciseLog = new ExerciseLog({
+            userId,
+            exerciseId,
+            reps,
+            sets,
+            dateExecuted,
+            durationMinutes,
+            caloriesBurned
+        });
         return await exerciseLog.save();
     }
 
@@ -53,6 +61,11 @@ export class ExerciseLogService {
     static async deleteAllExerciseLogsByUserId(userId) {
         return await ExerciseLog.deleteAllByUserId(userId);
     }
+
+    static async getExerciseLogsByDate(userId, date) {
+        return await ExerciseLog.getByDate(userId, date);
+    }
+
 
     static async getExerciseLogsByDateRange(userId, startDate, endDate) {
         return await ExerciseLog.getByDateRange(userId, startDate, endDate);
