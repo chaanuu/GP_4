@@ -3,9 +3,9 @@ import express from 'express';
 import { jest } from '@jest/globals';
 
 // 테스트 대상 모듈 import
-import { OAuthService } from '../services/OAuthService.js';
+import { OAuthVerifyService } from '../services/Auth/OAuthVerifyService.js';
 import { UserService } from '../services/User/UserService.js';
-import { JwtService } from '../services/JwtService.js';
+import { JwtService } from '../services/Auth/JwtService.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { User } from '../models/User/User.js';
 import { userRouter } from '../routes/User.js';
@@ -35,7 +35,7 @@ describe('전체 애플리케이션 테스트', () => {
   //         서비스 계층 테스트
   // ==================================
 
-  describe('OAuthService', () => {
+  describe('OAuthVerifyService', () => {
     beforeEach(() => {
       jest.clearAllMocks();
       process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
@@ -48,7 +48,7 @@ describe('전체 애플리케이션 테스트', () => {
         getPayload: () => mockPayload,
       });
 
-      const result = await OAuthService.verifyGoogleToken('valid-google-token');
+      const result = await OAuthVerifyService.verifyGoogleToken('valid-google-token');
       expect(result).toEqual({
         email: mockPayload.email,
         name: mockPayload.name,
@@ -62,14 +62,14 @@ describe('전체 애플리케이션 테스트', () => {
 
     it('유효하지 않은 Google 토큰에 대해 에러를 던져야 합니다', async () => {
       (new OAuth2Client()).verifyIdToken.mockRejectedValue(new Error('Invalid token'));
-      await expect(OAuthService.verifyGoogleToken('invalid-token')).rejects.toThrow('유효하지 않은 Google 토큰입니다.');
+      await expect(OAuthVerifyService.verifyGoogleToken('invalid-token')).rejects.toThrow('유효하지 않은 Google 토큰입니다.');
     });
 
     it('Apple 토큰을 성공적으로 검증해야 합니다', async () => {
       const mockPayload = { sub: 'apple-user-id', email: 'test@apple.com' };
       appleSignin.verifyIdToken.mockResolvedValue(mockPayload);
 
-      const result = await OAuthService.verifyAppleToken('valid-apple-token');
+      const result = await OAuthVerifyService.verifyAppleToken('valid-apple-token');
       expect(result).toEqual({ sub: mockPayload.sub, email: mockPayload.email });
       expect(appleSignin.verifyIdToken).toHaveBeenCalledWith('valid-apple-token', {
         audience: 'test-apple-client-id',
@@ -78,7 +78,7 @@ describe('전체 애플리케이션 테스트', () => {
 
     it('유효하지 않은 Apple 토큰에 대해 에러를 던져야 합니다', async () => {
       appleSignin.verifyIdToken.mockRejectedValue(new Error('Invalid token'));
-      await expect(OAuthService.verifyAppleToken('invalid-token')).rejects.toThrow('유효하지 않은 Apple 토큰입니다.');
+      await expect(OAuthVerifyService.verifyAppleToken('invalid-token')).rejects.toThrow('유효하지 않은 Apple 토큰입니다.');
     });
   });
 

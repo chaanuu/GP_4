@@ -1,6 +1,6 @@
 import JWT from 'jsonwebtoken';
-import { RedisClient } from '../utils/Redis';
-import config from '../config.js';
+import { RedisClient } from '../../utils/Redis.js';
+import config from '../../config.js';
 
 const jwtConfig = config.jwt;
 

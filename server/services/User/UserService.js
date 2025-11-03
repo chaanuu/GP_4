@@ -24,10 +24,21 @@ export class UserService {
     }
 
 
-    // create 
-    static async registerUser(email, password, name) {
+    /**
+     * 
+     * 사용자 등록(로컬, Google, Apple 등)
+     * 
+     * @returns {Promise<{id: number, email: string, name: string}>}
+     * @param {string} email 
+     * @param {string} password
+     * @param {string} name
+     * @param {string} provider
+     * @param {string|null} provider_id
+     * 
+     */
+    static async registerUser(email, password, name, provider = 'local', provider_id = null) {
         const hashedPassword = await this.hashPassword(password);
-        const result = await new User(email, hashedPassword, name).save();
+        const result = await new User(email, hashedPassword, name, provider, provider_id).save();
         return { id: result.insertId, email, name };
     }
 
@@ -74,4 +85,20 @@ export class UserService {
         return await User.getAll();
     }
 
+
+    static async getUserByProviderId(provider, providerId) {
+        const user = await User.getByProviderId(provider, providerId);
+        if (!user) {
+            throw new NotFoundError(`User not found by ${provider} ID`);
+        }
+        return user;
+    }
+
+    static async deleteUserByProviderId(provider, providerId) {
+        const user = await this.getUserByProviderId(provider, providerId);
+        if (!user) {
+            throw new NotFoundError(`User not found by ${provider} ID`);
+        }
+        await user.delete();
+    }
 }

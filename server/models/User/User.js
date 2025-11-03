@@ -2,11 +2,18 @@ import { db } from '../../utils/DB.js';
 
 import { DuplicateEntryError, NotFoundError } from '../../utils/errors.js';
 
+
 export class User {
-    constructor(email, password_hash) {
-        this.id = null; // DB에 저장되면 설정됨
+    constructor(email, password_hash, name, provider = 'local', provider_id = null) {
+        this.id = null; // DB에 저장되면 설정됨.
         this.email = email;
+        this.name = name;
         this.password_hash = password_hash;
+
+        // provider: 'local', 'google', 'apple' 등
+        // provider_id: OAuth 제공자가 부여한 고유 사용자 ID
+        this.provider = provider;
+        this.provider_id = provider_id;
         this.inbodys = [];
         this.nutrition = {};
     }
@@ -14,8 +21,7 @@ export class User {
 
     static #fromDB(row) {
         if (!row) return null;
-
-        const user = new User(row.email, row.password_hash);
+        const user = new User(row.email, row.password_hash, row.name, row.provider, row.provider_id);
         user.id = row.id;
         // JSON으로 저장된 문자열을 객체로 파싱
         // user.inbodys = row.inbodys ? JSON.parse(row.inbodys) : [];
@@ -30,10 +36,14 @@ export class User {
     async save() {
         const data = {
             email: this.email,
+            name: this.name,
             password_hash: this.password_hash,
-            inbodys: JSON.stringify(this.inbodys),
-            nutrition: JSON.stringify(this.nutrition)
+            provider: this.provider,
+            provider_id: this.provider_id,
+            // inbodys: JSON.stringify(this.inbodys),
+            // nutrition: JSON.stringify(this.nutrition),
         };
+
 
         try {
             if (this.id) {
@@ -127,6 +137,27 @@ export class User {
             throw new NotFoundError('User not found, delete failed.');
         }
 
+        return true;
+    }
+
+    static async getByProviderId(provider, provider_id) {
+        const rows = await db.read('users', { provider: provider, provider_id: provider_id });
+
+        if (rows.length === 0) {
+            return null;
+        }
+
+        return User.#fromDB(rows[0]);
+    }
+
+
+    static async deleteByProviderId(provider, provider_id) {
+        const result = await db.delete('users', { provider: provider, provider_id: provider_id });
+
+        if (result.affectedRows === 0) {
+            // 삭제할 대상이 없음 (존재하지 않는 ID)
+            throw new NotFoundError('User not found, delete failed.');
+        }
         return true;
     }
 }
