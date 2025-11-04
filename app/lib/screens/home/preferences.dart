@@ -52,15 +52,6 @@ class PreferencesScreen extends StatelessWidget {
             title: const Text('About App'), // 앱 정보
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () {
-              // TODO: 앱 정보 표시 (Version, License 등)
-            },
-          ),
-
-          ListTile(
-            leading: const Icon(Icons.description_outlined),
-            title: const Text('MIT License'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
               showLicensePage(
                   context: context,
                   applicationName: 'MealFit',
