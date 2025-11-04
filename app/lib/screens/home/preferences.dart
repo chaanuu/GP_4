@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../auth/sign_in_screen.dart';
 
 class PreferencesScreen extends StatelessWidget {
   // const 생성자는 main.dart의 라우트 정의를 만족시킵니다.
@@ -9,6 +10,11 @@ class PreferencesScreen extends StatelessWidget {
     // TODO: 2. 토큰 및 사용자 정보 삭제 (SharedPreferences/Secure Storage)
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('로그아웃 되었습니다.')),
+    );
+
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/signin',
+          (route) => false,
     );
     // TODO: 로그인 화면으로 이동 (예시: Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);)
   }
