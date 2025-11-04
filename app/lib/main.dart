@@ -18,6 +18,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/workout/program_builder_screen.dart';
 import 'screens/workout/save_program_screen.dart';
 import 'screens/workout/program_detail_screen.dart';
+import 'screens/home/personal_info.dart';
+import 'screens/home/preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,7 +54,8 @@ class MyApp extends StatelessWidget {
         '/program_builder': (context) => const ProgramBuilderScreen(),
         '/save_program': (context) => const SaveProgramScreen(),
         '/program_detail': (context) => const ProgramDetailScreen(),
-
+        '/personal_info': (context) => const PersonalInfoScreen(),
+        '/preferences': (context) => const PreferencesScreen(),
       },
     );
   }

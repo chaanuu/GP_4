@@ -21,7 +21,7 @@ dependencies:
   go_router: ^14.0.0
 
   # 상태 관리
-  flutter_riverpod: ^2.5.1
+  flutter_riverpod: ^2.6.1
 
   # 권한 요청
   permission_handler: ^11.0.0
