@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart'; // 파일 저장을 위해 추가
+import 'package:shared_preferences/shared_preferences.dart'; // 경로 저장을 위해 추가
+import 'dart:io'; // File 사용을 위해 추가
+import 'package:intl/intl.dart'; // 날짜 포맷을 위해 추가
 
+// Provider import
+import 'providers/nav_provider.dart';
+
+// 화면 import
 import 'screens/auth/sign_in_screen.dart';
 import 'screens/home/main_screen.dart';
 import 'screens/activity/activity_analysis_screen.dart';
@@ -14,10 +23,11 @@ import 'screens/workout/single_exercise_list_screen.dart';
 import 'screens/workout/qr_scanner_screen.dart';
 import 'screens/body_log/body_log_screen.dart';
 import 'screens/workout/exercise_setup_screen.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/workout/program_builder_screen.dart';
 import 'screens/workout/save_program_screen.dart';
 import 'screens/workout/program_detail_screen.dart';
+import 'screens/body_log/compare_result_screen.dart';
+// ✅ 누락되었던 import 추가
 import 'screens/home/personal_info.dart';
 import 'screens/home/preferences.dart';
 
@@ -35,13 +45,13 @@ class MyApp extends StatelessWidget {
       title: 'Fitness App',
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
-        fontFamily: 'Pretendard', // TODO: Pretendard 폰트 추가 후 적용
+        fontFamily: 'Pretendard',
       ),
       debugShowCheckedModeBanner: false,
-      initialRoute: '/signin', // 앱 시작 시 로그인 화면부터
+      initialRoute: '/signin',
       routes: {
         '/signin': (context) => const SignInScreen(),
-        '/': (context) => const AppShell(), // 로그인 성공 후 AppShell로 이동
+        '/': (context) => const AppShell(),
         '/food_diary': (context) => const FoodDiaryScreen(),
         '/food_analysis': (context) => const FoodAnalysisScreen(),
         '/activity_analysis': (context) => const ActivityAnalysisScreen(),
@@ -51,10 +61,10 @@ class MyApp extends StatelessWidget {
         '/single_exercise_list': (context) => const SingleExerciseListScreen(),
         '/qr_scanner': (context) => const QrScannerScreen(),
         '/exercise_setup': (context) => const ExerciseSetupScreen(),
-        '/workout_program': (context) => const WorkoutProgramScreen(),
         '/program_builder': (context) => const ProgramBuilderScreen(),
         '/save_program': (context) => const SaveProgramScreen(),
         '/program_detail': (context) => const ProgramDetailScreen(),
+        '/compare_result': (context) => const CompareResultScreen(),
         '/personal_info': (context) => const PersonalInfoScreen(),
         '/preferences': (context) => const PreferencesScreen(),
       },
@@ -62,35 +72,29 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AppShell extends StatefulWidget {
+// AppShell을 ConsumerStatefulWidget으로 유지 (뒤로가기 기능 필수!)
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  State<AppShell> createState() => _AppShellState();
+  ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
-  // -1은 초기 상태 (MainScreen)를 나타냅니다. 0부터는 탭 인덱스를 의미
-  int _selectedIndex = -1;
-
-  // 하단 네비게이션 바 아이콘 순서에 맞게 페이지를 매핑
+class _AppShellState extends ConsumerState<AppShell> {
   static const List<Widget> _tabScreens = <Widget>[
-    FoodDiaryScreen(),        // Index 0: '식사' (restaurant icon)
-    ActivityAnalysisScreen(), // Index 1: '활동' (run icon)
-    SizedBox.shrink(),        // Index 2: 카메라 버튼 (FAB) - 이 인덱스는 건너뜀
-    WorkoutHubScreen(),       // Index 3: '운동' (weight icon)
-    BodyLogScreen(),          // Index 4: '눈바디' (person icon)
+    FoodDiaryScreen(),
+    ActivityAnalysisScreen(),
+    SizedBox.shrink(),
+    WorkoutHubScreen(),
+    BodyLogScreen(),
   ];
 
-  // 탭 아이템 클릭 시 호출
   void _onItemTapped(int index) {
     if (index == 2) return;
-    setState(() {
-      _selectedIndex = index;
-    });
+    // setState가 아닌 ref를 사용하여 상태 변경
+    ref.read(navIndexProvider.notifier).state = index;
   }
 
-  // 카메라 아이콘 클릭 시 동작
   void _onCameraTapped() {
     showModalBottomSheet(
       context: context,
@@ -121,70 +125,98 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  // 이미지 피커 로직
   Future<void> _pickImage(ImageSource source, String type) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: source);
 
     if (image != null) {
       if (type == 'food') {
-        // TODO: 찍은 음식 사진을 백엔드로 전송하고 분석 페이지로 이동
         print('Food image path: ${image.path}');
-        Navigator.pushNamed(context, '/food_analysis' /*, arguments: image */);
+        if (mounted) {
+          Navigator.pushNamed(context, '/food_analysis');
+        }
       } else if (type == 'body') {
-        // TODO: 찍은 눈바디 사진을 로컬에 저장
-        print('Body image path: ${image.path}');
-        // local_storage_service.saveImage(image);
+        // 눈바디 사진 저장 로직 유지
+        await _saveBodyImage(image);
+        print('Body image saved: ${image.path}');
+
+        // 저장 후 눈바디 탭(인덱스 4)으로 이동
+        ref.read(navIndexProvider.notifier).state = 4;
       }
     }
   }
 
+  // 이미지를 로컬 저장소에 저장하고 경로를 SharedPref에 기록하는 함수
+  Future<void> _saveBodyImage(XFile image) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final String savedPath = '${directory.path}/$fileName';
+
+    // 1. 파일 저장
+    await image.saveTo(savedPath);
+
+    // 2. 경로 및 날짜 정보 저장 (SharedPreferences)
+    final prefs = await SharedPreferences.getInstance();
+    List<String> savedImages = prefs.getStringList('body_images') ?? [];
+
+    // "경로|날짜 시간" 형식으로 저장
+    String dateStr = DateFormat('yyyy년 MM월 dd일 HH:mm').format(DateTime.now());
+    savedImages.add('$savedPath|$dateStr');
+
+    await prefs.setStringList('body_images', savedImages);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        // _selectedIndex가 -1이면 MainScreen을, 아니면 선택된 탭 화면을 보여줌
-        child: _selectedIndex == -1
-            ? const MainScreen()
-            : _tabScreens.elementAt(_selectedIndex),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onCameraTapped,
-        backgroundColor: Colors.black,
-        child: const Icon(Icons.camera_alt, color: Colors.white),
-        elevation: 2.0,
-        shape: const CircleBorder(),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              // '식사' 탭
-              _buildNavItem(Icons.restaurant, 0),
-              // '활동' 탭
-              _buildNavItem(Icons.directions_run, 1),
-              // FAB 공간
-              const SizedBox(width: 40),
-              // '운동' 탭
-              _buildNavItem(Icons.fitness_center, 3),
-              // '눈바디' 탭
-              _buildNavItem(Icons.accessibility_new, 4),
-            ],
+    // Provider의 값을 구독하여 현재 인덱스를 가져옵니다.
+    final selectedIndex = ref.watch(navIndexProvider);
+
+    // PopScope 유지 (뒤로가기 시 홈으로 이동)
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        if (selectedIndex != -1) {
+          ref.read(navIndexProvider.notifier).state = -1;
+        }
+      },
+      child: Scaffold(
+        body: Center(
+          child: selectedIndex == -1
+              ? const MainScreen()
+              : _tabScreens.elementAt(selectedIndex),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _onCameraTapped,
+          backgroundColor: Colors.black,
+          child: const Icon(Icons.camera_alt, color: Colors.white),
+          elevation: 2.0,
+          shape: const CircleBorder(),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        bottomNavigationBar: BottomAppBar(
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 8.0,
+          child: SizedBox(
+            height: 60,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                _buildNavItem(Icons.restaurant, 0, selectedIndex),
+                _buildNavItem(Icons.directions_run, 1, selectedIndex),
+                const SizedBox(width: 40),
+                _buildNavItem(Icons.fitness_center, 3, selectedIndex),
+                _buildNavItem(Icons.accessibility_new, 4, selectedIndex),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(IconData icon, int index) {
-    // _selectedIndex와 현재 탭의 index가 정확히 일치할 때만 선택된 것으로 처리
-    final bool isSelected = _selectedIndex == index;
-
+  Widget _buildNavItem(IconData icon, int index, int currentIndex) {
+    final bool isSelected = currentIndex == index;
     return Expanded(
       child: IconButton(
         icon: Icon(icon),
