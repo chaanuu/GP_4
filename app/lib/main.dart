@@ -44,6 +44,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const AppShell(), // 로그인 성공 후 AppShell로 이동
         '/food_diary': (context) => const FoodDiaryScreen(),
         '/food_analysis': (context) => const FoodAnalysisScreen(),
+        '/activity_analysis': (context) => const ActivityAnalysisScreen(),
         '/workout_program': (context) => const WorkoutProgramScreen(),
         '/workout_reps': (context) => const WorkoutRepsScreen(),
         '/muscle_condition': (context) => const MuscleConditionScreen(),
