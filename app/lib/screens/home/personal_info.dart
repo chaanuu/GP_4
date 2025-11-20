@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/personal_info_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../providers/program_provider.dart';
 
 class PersonalInfoScreen extends ConsumerStatefulWidget {
   const PersonalInfoScreen({super.key});
@@ -10,135 +11,201 @@ class PersonalInfoScreen extends ConsumerStatefulWidget {
 }
 
 class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
-  // 사용자가 입력할 값을 제어하기 위한 컨트롤러
-  final TextEditingController _heightController = TextEditingController();
-  final TextEditingController _weightController = TextEditingController();
-  final TextEditingController _ageController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
 
-  String _selectedGender = 'Male'; // 성별 초기값
-  bool _isInitialized = false;
+  // ✅ 신체 정보 컨트롤러 (나이 추가됨)
+  final _heightController = TextEditingController();
+  final _weightController = TextEditingController();
+  final _ageController = TextEditingController(); // 나이
+  String _gender = 'male';
+
+  bool _isLoading = true;
+  bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
-    // ⭐️ initState에서 저장된 기존 정보를 로드하는 로직을 호출합니다.
-    final info = ref.read(personalInfoProvider);
-    _heightController.text = info.height.toString();
-    _weightController.text = info.weight.toString();
-    _ageController.text = info.age.toString();
-    _selectedGender = info.gender;
+    _loadAllUserInfo();
+  }
+
+  Future<void> _loadAllUserInfo() async {
+    final api = ref.read(apiServiceProvider);
+    final userData = await api.getUserInfo();
+
+    final prefs = await SharedPreferences.getInstance();
+    final height = prefs.getDouble('user_height') ?? 175.0;
+    final weight = prefs.getDouble('user_weight') ?? 70.0;
+    final age = prefs.getInt('user_age') ?? 25; // 나이 불러오기 (기본값 25)
+    final gender = prefs.getString('user_gender') ?? 'male';
+
+    if (mounted) {
+      setState(() {
+        if (userData != null) {
+          _nameController.text = userData['name'] ?? '';
+          _emailController.text = userData['email'] ?? '';
+        }
+        _heightController.text = height.toString();
+        _weightController.text = weight.toString();
+        _ageController.text = age.toString(); // 나이 설정
+        _gender = gender;
+
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _saveUserInfo() async {
+    setState(() => _isLoading = true);
+
+    final api = ref.read(apiServiceProvider);
+    final success = await api.updateUserInfo(_nameController.text);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('user_height', double.tryParse(_heightController.text) ?? 175.0);
+    await prefs.setDouble('user_weight', double.tryParse(_weightController.text) ?? 70.0);
+    await prefs.setInt('user_age', int.tryParse(_ageController.text) ?? 25); // 나이 저장
+    await prefs.setString('user_gender', _gender);
+
+    setState(() {
+      _isLoading = false;
+      _isEditing = false;
+    });
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('정보가 수정되었습니다.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('일부 정보(서버) 수정에 실패했습니다.')),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
     _heightController.dispose();
     _weightController.dispose();
-    _ageController.dispose();
+    _ageController.dispose(); // dispose 추가
     super.dispose();
-  }
-
-  // 정보 저장
-  void _savePersonalInfo() {
-    // 1. 입력 값 파싱 및 유효성 검사
-    final double? height = double.tryParse(_heightController.text);
-    final double? weight = double.tryParse(_weightController.text);
-    final int? age = int.tryParse(_ageController.text);
-
-    // 2. 유효성 검사
-    if (height != null && height > 0 &&
-        weight != null && weight > 0 &&
-        age != null && age > 0) {
-
-      // 3. Riverpod 상태 업데이트 (앱 전체에 정보 반영 및 저장소에 저장)
-      ref.read(personalInfoProvider.notifier).updateInfo(
-        height: height,
-        weight: weight,
-        age: age,
-        gender: _selectedGender,
-      );
-
-      // 4. 저장 성공 알림
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('건강 정보가 저장되었습니다.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Future.microtask(() {
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
-      });
-    } else {
-      // 5. 유효하지 않은 정보 알림
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('유효한 숫자 정보를 입력해 주세요.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final info = ref.watch(personalInfoProvider);
-
-    if (!_isInitialized) {
-      _heightController.text = info.height == 0.0 ? '' : info.height.toString();
-      _weightController.text = info.weight == 0.0 ? '' : info.weight.toString();
-      _ageController.text = info.age == 0 ? '' : info.age.toString();
-      _isInitialized = true;
-    }
-
     return Scaffold(
-      appBar: AppBar(title: const Text('건강 정보 입력')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            // 💡 키 입력 필드
-            TextFormField(
-              controller: _heightController,
-              decoration: const InputDecoration(labelText: '키 (cm)'),
-              keyboardType: TextInputType.number,
-            ),
-            // 💡 몸무게 입력 필드
-            TextFormField(
-              controller: _weightController,
-              decoration: const InputDecoration(labelText: '몸무게 (kg)'),
-              keyboardType: TextInputType.number,
-            ),
-            // 💡 나이 입력 필드
-            TextFormField(
-              controller: _ageController,
-              decoration: const InputDecoration(labelText: '나이'),
-              keyboardType: TextInputType.number,
-            ),
-            // 💡 성별 선택 필드 (예시)
-            DropdownButton<String>(
-              value: _selectedGender,
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedGender = newValue!;
-                });
+      appBar: AppBar(
+        title: const Text('내 정보', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          if (!_isLoading)
+            TextButton(
+              onPressed: () {
+                if (_isEditing) {
+                  _saveUserInfo();
+                } else {
+                  setState(() => _isEditing = true);
+                }
               },
-              items: <String>['Male', 'Female']
-                  .map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
+              child: Text(
+                _isEditing ? '저장' : '수정',
+                style: const TextStyle(fontSize: 16, color: Colors.blue),
+              ),
             ),
-            const SizedBox(height: 30),
-            // 💡 저장 버튼
-            ElevatedButton(
-              onPressed: _savePersonalInfo,
-              child: const Text('정보 저장'),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('기본 정보', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+
+            _buildTextField('이메일', _emailController, readOnly: true),
+            const SizedBox(height: 16),
+            _buildTextField('이름', _nameController, readOnly: !_isEditing),
+
+            const SizedBox(height: 32),
+            const Text('신체 정보', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+
+            // ✅ 키, 몸무게, 나이를 한 줄에 배치
+            Row(
+              children: [
+                Expanded(child: _buildTextField('키 (cm)', _heightController, readOnly: !_isEditing, isNumber: true)),
+                const SizedBox(width: 16),
+                Expanded(child: _buildTextField('몸무게 (kg)', _weightController, readOnly: !_isEditing, isNumber: true)),
+                const SizedBox(width: 16),
+                Expanded(child: _buildTextField('나이', _ageController, readOnly: !_isEditing, isNumber: true)),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            DropdownButtonFormField<String>(
+              value: _gender,
+              decoration: InputDecoration(
+                labelText: '성별',
+                border: const OutlineInputBorder(),
+                filled: !_isEditing,
+                fillColor: _isEditing ? Colors.white : const Color(0xFFF5F5F5),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'male', child: Text('남성')),
+                DropdownMenuItem(value: 'female', child: Text('여성')),
+              ],
+              onChanged: _isEditing ? (value) {
+                setState(() {
+                  _gender = value!;
+                });
+              } : null,
+            ),
+
+            const SizedBox(height: 48),
+
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () async {
+                  await ref.read(apiServiceProvider).logout();
+                  if (context.mounted) {
+                    Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
+                  }
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: const BorderSide(color: Colors.red),
+                ),
+                child: const Text('로그아웃', style: TextStyle(color: Colors.red)),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller, {bool readOnly = false, bool isNumber = false}) {
+    return TextField(
+      controller: controller,
+      readOnly: readOnly,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        filled: readOnly,
+        fillColor: readOnly ? const Color(0xFFF5F5F5) : Colors.white,
       ),
     );
   }
