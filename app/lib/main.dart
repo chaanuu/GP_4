@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
         '/signin': (context) => const SignInScreen(),
         '/': (context) => const AppShell(),
         '/food_diary': (context) => const FoodDiaryScreen(),
-        '/food_analysis': (context) => const FoodAnalysisScreen(),
+        // ⚠️ 이 경로는 이제 사용되지 않지만, 다른 곳에서 호출될까봐 유지합니다.
         '/activity_analysis': (context) => const ActivityAnalysisScreen(),
         '/workout_program': (context) => const WorkoutProgramScreen(),
         '/workout_reps': (context) => const WorkoutRepsScreen(),
@@ -127,13 +127,23 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   Future<void> _pickImage(ImageSource source, String type) async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: source);
+    // ⚠️ [수정 시작]: Windows 테스트를 위해 source를 ImageSource.gallery로 고정합니다.
+    // 나중에 모바일 에뮬레이터에서 테스트할 때는 이 줄을 주석 처리하고 원본 source를 사용하세요.
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    // ⚠️ [수정 끝]
+    // final XFile? image = await picker.pickImage(source: source);
 
     if (image != null) {
       if (type == 'food') {
         print('Food image path: ${image.path}');
         if (mounted) {
-          Navigator.pushNamed(context, '/food_analysis');
+          // ✅ 수정된 로직: FoodAnalysisScreen에 XFile image 객체를 직접 전달
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FoodAnalysisScreen(image: image),
+            ),
+          );
         }
       } else if (type == 'body') {
         // 눈바디 사진 저장 로직 유지
