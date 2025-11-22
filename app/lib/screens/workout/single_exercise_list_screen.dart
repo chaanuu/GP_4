@@ -13,7 +13,6 @@ class SingleExerciseListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 표시할 운동 목록 데이터를 만듭니다.
     final List<Exercise> exercises = [
       Exercise(name: '데드리프트', imagePath: 'assets/images/deadlift.png'),
       Exercise(name: '스쿼트', imagePath: 'assets/images/squat.png'),
@@ -38,11 +37,10 @@ class SingleExerciseListScreen extends StatelessWidget {
           final exercise = exercises[index];
           return GestureDetector(
             onTap: () {
-              // ✅ 이 부분이 수정되었습니다!
-              // Exercise 객체와 isSingleWorkout 플래그를 Map으로 묶어서 전달합니다.
+              //  수정됨: '설정 화면'이 원하는 Map 형식으로 데이터 포장
               final arguments = {
                 'exercise': exercise,
-                'isSingleWorkout': true,
+                'isSingleWorkout': true, // 단일 운동임을 표시
               };
               Navigator.pushNamed(context, '/exercise_setup', arguments: arguments);
             },

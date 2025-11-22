@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>정확한 활동량 분석과 고도 측정을 위해 위치 정보가 필요합니다.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>백그라운드에서도 이동 거리를 추적하기 위해 위치 정보가 필요합니다.</string>
 </dict>
 </plist>

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart'; // SVG 사용 시 필요
 
 class SignInScreen extends StatelessWidget {
+  static const routeName = '/signIn';
   const SignInScreen({super.key});
 
   @override
