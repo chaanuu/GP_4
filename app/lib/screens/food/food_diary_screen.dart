@@ -218,7 +218,14 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
                               MaterialPageRoute(
                                 builder: (context) => FoodDetailScreen(logEntry: rawLog),
                               ),
-                            );
+                            ).then((result) { // ⭐️ 문법 오류 수정: (result) 다음에 { } 추가
+                              // FoodDetailScreen에서 true를 반환하면 로그 새로고침
+                              if (result == true) {
+                                // 💡 수정된 로그를 반영하기 위해 로그 로딩 함수 호출 (함수명은 _loadFoodLogs()로 가정)
+                                // 이 코드가 _FoodDiaryScreenState 클래스 내에 있다고 가정합니다.
+                                _loadFoodLogs();
+                              }
+                            });
                           } else {
                             // rawLog가 없으면 오류 메시지를 띄우거나 아무것도 하지 않음
                             ScaffoldMessenger.of(context).showSnackBar(

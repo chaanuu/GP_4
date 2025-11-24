@@ -19,7 +19,8 @@ String getVisionApiUrl() {
 
 class FoodAnalysisScreen extends StatefulWidget {
   final XFile image;
-  const FoodAnalysisScreen({super.key, required this.image});
+  final String? initialFoodName;
+  const FoodAnalysisScreen({super.key, required this.image, this.initialFoodName});
 
   @override
   State<FoodAnalysisScreen> createState() => _FoodAnalysisScreenState();
@@ -31,6 +32,9 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   bool _showRetryUI = false;
+
+  List<String> _suggestedFoodNames = [];
+  String? _selectedFoodName;
 
   Map<String, String> _nutritionData = {
     '음식': '분석 중...',
@@ -50,7 +54,13 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
   @override
   void initState() {
     super.initState();
-    _analyzeFoodWithVision(widget.image);
+    if (widget.initialFoodName != null && widget.initialFoodName!.isNotEmpty) {
+      // initialFoodName이 전달되면 Vision API 건너뛰고 바로 USDA 분석 시작
+      _performAnalysis(widget.initialFoodName!);
+    } else {
+      // 아니면 기존처럼 Vision API로 분석 시작
+      _analyzeFoodWithVision(widget.image);
+    }
   }
 
   @override
@@ -180,6 +190,10 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
       }
 
       final visionJson = jsonDecode(visionResponse.body);
+      List<String> candidates = ['apple_pie', 'baby_back_ribs', 'baklava', 'beef_carpaccio', 'beef_tartare', 'beet_salad', 'beignets', 'bibimbap', 'bread_pudding', 'breakfast_burrito', 'bruschetta', 'caesar_salad', 'cannoli', 'caprese_salad', 'carrot_cake', 'ceviche', 'cheesecake', 'cheese_plate', 'chicken_curry', 'chicken_quesadilla', 'chicken_wings', 'chocolate_cake', 'chocolate_mousse', 'churros', 'clam_chowder', 'club_sandwich', 'crab_cakes', 'creme_brulee', 'croque_madame', 'cup_cakes', 'deviled_eggs', 'donuts', 'dumplings', 'edamame', 'eggs_benedict', 'escargots', 'falafel', 'filet_mignon', 'fish_and_chips', 'foie_gras', 'french_fries', 'french_onion_soup', 'french_toast', 'fried_calamari', 'fried_rice', 'frozen_yogurt', 'garlic_bread', 'gnocchi', 'greek_salad', 'grilled_cheese_sandwich', 'grilled_salmon', 'guacamole', 'gyoza', 'hamburger', 'hot_and_sour_soup', 'hot_dog', 'huevos_rancheros', 'hummus', 'ice_cream', 'lasagna', 'lobster_bisque', 'lobster_roll_sandwich', 'macaroni_and_cheese', 'macarons', 'miso_soup', 'mussels', 'nachos', 'omelette', 'onion_rings', 'oysters', 'pad_thai', 'paella', 'pancakes', 'panna_cotta', 'peking_duck', 'pho', 'pizza', 'pork_chop', 'poutine', 'prime_rib', 'pulled_pork_sandwich', 'ramen', 'ravioli', 'red_velvet_cake', 'risotto', 'samosa', 'sashimi', 'scallops', 'seaweed_salad', 'shrimp_and_grits', 'spaghetti_bolognese', 'spaghetti_carbonara', 'spring_rolls', 'steak', 'strawberry_shortcake', 'sushi', 'tacos', 'takoyaki', 'tiramisu', 'tuna_tartare', 'waffles'];
+
+      candidates = candidates.toSet().toList();
+
 
       String predictedFood = '알 수 없는 음식';
       var responses = visionJson['responses'];
@@ -197,6 +211,13 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
           }
         }
       }
+
+      setState(() {
+        _suggestedFoodNames = candidates;
+        _selectedFoodName = candidates.isNotEmpty ? candidates.first : null;
+      });
+
+
 
       // 추출된 음식 이름으로 영양 정보 분석을 시작합니다.
       await _performAnalysis(predictedFood);
@@ -379,29 +400,84 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             const Text(
-                              '음식 이름을 직접 입력해 주세요:',
+                              '검색된 후보 중 정확한 음식 이름을 선택하거나 직접 입력해 주세요:', // 텍스트 수정
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
+
+                            // ⭐ 1. 드롭다운 버튼 (Vision 후보 목록 사용)
+                            if (_suggestedFoodNames.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey.shade400),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _selectedFoodName,
+                                    hint: const Text('음식 후보 선택'),
+                                    isExpanded: true,
+                                    onChanged: (String? newValue) {
+                                      setState(() {
+                                        _selectedFoodName = newValue;
+                                        // 드롭다운에서 선택 시, 직접 입력 필드와 동기화
+                                        _foodNameController.text = newValue ?? '';
+                                      });
+                                    },
+                                    items: _suggestedFoodNames.map<DropdownMenuItem<String>>((String value) {
+                                      return DropdownMenuItem<String>(
+                                        value: value,
+                                        child: Text(value),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: 16), // 드롭다운과 텍스트 필드 사이 간격
+
+                            // ⭐ 2. 직접 입력 필드 (선택하거나 직접 입력)
                             TextField(
                               controller: _foodNameController,
+                              // 드롭다운이 있을 경우 힌트 텍스트 수정
                               decoration: InputDecoration(
-                                hintText: '예: 닭가슴살 샐러드',
+                                hintText: _suggestedFoodNames.isNotEmpty ? '직접 입력 (선택지가 없을 경우)' : '예: Chocolate Cookie',
                                 border: const OutlineInputBorder(),
                                 suffixIcon: IconButton(
                                   icon: const Icon(Icons.clear),
-                                  onPressed: _foodNameController.clear,
+                                  onPressed: () {
+                                    _foodNameController.clear();
+                                    setState(() {
+                                      // 입력 필드를 지우면 선택된 항목도 해제
+                                      _selectedFoodName = null;
+                                    });
+                                  },
                                 ),
                               ),
                             ),
                             const SizedBox(height: 16),
+
+                            // ⭐ 3. 재시도 버튼 수정: 선택된/입력된 이름 사용
                             ElevatedButton(
-                              onPressed: _retryAnalysis,
+                              onPressed: () {
+                                final finalSelection = _foodNameController.text.trim();
+
+                                // 입력 필드에 값이 있으면 그것을 사용하고, 아니면 드롭다운 선택 값을 사용
+                                if (finalSelection.isNotEmpty) {
+                                  _performAnalysis(finalSelection);
+                                } else if (_selectedFoodName != null) {
+                                  _performAnalysis(_selectedFoodName!);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('음식 이름을 선택하거나 입력해 주세요.')),
+                                  );
+                                }
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.black,
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                               ),
-                              child: const Text('영양 정보 다시 검색', style: TextStyle(color: Colors.white, fontSize: 16)),
+                              child: const Text('선택/입력된 이름으로 다시 검색', style: TextStyle(color: Colors.white, fontSize: 16)),
                             ),
                           ],
                         ),
