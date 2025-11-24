@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // SharedPreferences 추가
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io'; // File 사용을 위해 추가
+import 'dart:io';
 import '../../providers/nav_provider.dart';
 import 'food_analysis_screen.dart';
 
@@ -26,45 +26,69 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
     _loadFoodLogs();
   }
 
-  // SharedPreferences에서 음식 기록 불러오기
+  // SharedPreferences에서 음식 기록 불러오기 (원본 인덱스 저장 로직 추가)
   Future<void> _loadFoodLogs() async {
     final prefs = await SharedPreferences.getInstance();
-    // 'food_logs' 키를 사용합니다.
     List<String> savedData = prefs.getStringList('food_logs') ?? [];
 
     // 임시 데이터 (디자인 확인용)
     final List<Map<String, dynamic>> assetLogs = [
-        {'imageUrl': 'assets/images/pears.jpg', 'name': '설탕 절인 토마토', 'portion': '100.0g', 'calories': 73, 'mealType': '간식', 'date': '9/19', 'isAsset': true},
-        {'imageUrl': 'assets/images/pizza.jpg', 'name': '피자', 'portion': '90.0g', 'calories': 237, 'mealType': '저녁', 'date': '9/19', 'isAsset': true},
+      {'imageUrl': 'assets/images/pears.jpg', 'name': '설탕 절인 토마토', 'portion': '100.0g', 'calories': 73, 'mealType': '간식', 'date': '9/19', 'isAsset': true},
+      {'imageUrl': 'assets/images/pizza.jpg', 'name': '피자', 'portion': '90.0g', 'calories': 237, 'mealType': '저녁', 'date': '9/19', 'isAsset': true},
     ];
 
     // 저장된 데이터 파싱
-    List<Map<String, dynamic>> parsedLogs = savedData.map((item) {
-      // 저장 형식: "경로|음식명|양|칼로리|식사유형|날짜 시간"
+    List<Map<String, dynamic>> parsedLogs = savedData.asMap().entries.map((entry) {
+      int originalIndex = entry.key; // 원본 인덱스
+      String item = entry.value;
+
       final parts = item.split('|');
 
-      // 데이터가 6개 미만일 경우 기본값 설정으로 오류 방지
       return {
         'imageUrl': parts[0],
         'name': parts.length > 1 ? parts[1] : '이름 없음',
         'portion': parts.length > 2 ? parts[2] : 'N/A',
+        // double로 파싱 후 int로 반올림하여 칼로리 오류 수정
         'calories': parts.length > 3
             ? (double.tryParse(parts[3].replaceAll('kcal', '')) ?? 0.0).round()
             : 0,
         'mealType': parts.length > 4 ? parts[4] : '기타',
-        // 날짜만 분리 (예: "9/20 18:30" -> "9/20")
         'date': parts.length > 5 ? parts[5].split(' ')[0] : '날짜 없음',
-        'isAsset': false, // SharedPreferences에 저장된 것은 파일 경로
+        'isAsset': false,
+        'originalIndex': originalIndex, // 삭제를 위해 원본 인덱스 저장
       };
     }).toList();
 
     setState(() {
-      // SharedPreferences에 저장된 로그 + 임시 Asset 로그를 합칩니다.
+      // 최신 로그를 위에 표시하기 위해 reversed 사용
       _foodLogs = [...parsedLogs.reversed, ...assetLogs];
-      // 최신 로그를 위에 표시하고 싶다면 .reversed를 제거하고 parsedLogs만 사용하세요.
       _isLoading = false;
     });
   }
+
+  // 추가: 음식 기록 삭제 함수
+  Future<void> _deleteFoodLog(int originalIndex, bool isAsset) async {
+    if (isAsset) {
+      // 임시 데이터는 SharedPreferences를 건드릴 필요가 없습니다.
+      print('Asset log cannot be permanently deleted from SharedPreferences.');
+      // UI에서만 제거하고 싶다면 여기서 setState를 통해 _foodLogs를 수정해야 하지만,
+      // 여기서는 영구 기록 삭제에 초점을 맞추고 임시 데이터는 삭제를 허용하지 않습니다.
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    List<String> savedData = prefs.getStringList('food_logs') ?? [];
+
+    if (originalIndex >= 0 && originalIndex < savedData.length) {
+      // SharedPreferences에 저장된 목록에서 해당 인덱스의 항목을 제거
+      savedData.removeAt(originalIndex);
+      await prefs.setStringList('food_logs', savedData);
+
+      // 삭제 후 로그 목록을 새로고침하여 UI 업데이트
+      await _loadFoodLogs();
+    }
+  }
+  // ----------------------------------------------------
 
   void _onAddTapped() {
     showModalBottomSheet(
@@ -73,6 +97,14 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
         return SafeArea(
           child: Wrap(
             children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('음식 사진 촬영'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: const Text('갤러리에서 선택'),
@@ -88,13 +120,11 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
     );
   }
 
-  // ✅ 추가: 이미지 선택 및 FoodAnalysisScreen으로 이동
   Future<void> _pickImage(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: source);
 
     if (image != null && mounted) {
-      // FoodAnalysisScreen으로 XFile 객체 전달
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -107,28 +137,26 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
     }
   }
 
+
   @override
-  Widget build(BuildContext context) { // WidgetRef 제거
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () {
-            // ConsumerStatefulWidget 내에서 Riverpod 사용 시 ref.read 사용
             ref.read(navIndexProvider.notifier).state = -1;
           },
         ),
         title: const Text('식습관 분석', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 1,
-
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: Colors.black),
-            onPressed: _onAddTapped, // 위에서 정의한 함수 연결
+            onPressed: _onAddTapped,
           ),
         ],
-
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -155,7 +183,7 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
                     errorBuilder: _errorBuilder,
                   )
                       : Image.file(
-                    File(log['imageUrl']), // 저장된 파일 경로 사용
+                    File(log['imageUrl']),
                     width: 70,
                     height: 70,
                     fit: BoxFit.cover,
@@ -167,15 +195,37 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // '아침 - 계란 샌드위치' 형식
                       Text('${log['mealType']} - ${log['name']}', style: const TextStyle(fontWeight: FontWeight.bold)),
                       Text(log['portion'], style: TextStyle(color: Colors.grey[600])),
-                      // 칼로리가 int로 저장되었을 경우 다시 문자열로 포맷팅
                       Text('${log['calories']}kcal', style: TextStyle(color: Colors.grey[600])),
                     ],
                   ),
                 ),
-                Text(log['date'], style: TextStyle(color: Colors.grey[600])),
+                // ----------------------------------------------------
+                // ✅ 수정: 날짜와 삭제 버튼을 포함하는 Row 추가
+                // ----------------------------------------------------
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(log['date'], style: TextStyle(color: Colors.grey[600])),
+                    const SizedBox(width: 8),
+                    if (!isAsset) // 실제 데이터에만 삭제 버튼 표시
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.red, size: 18),
+                        onPressed: () {
+                          // _deleteFoodLog 호출 시 원본 인덱스와 isAsset 플래그 전달
+                          _deleteFoodLog(
+                              log['originalIndex']!,
+                              log['isAsset'] ?? false
+                          );
+                        },
+                        // 버튼 영역 최소화
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                  ],
+                ),
+                // ----------------------------------------------------
               ],
             ),
           );
@@ -184,7 +234,6 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
     );
   }
 
-  // 에러 발생 시 공통적으로 사용할 errorBuilder 위젯
   Widget _errorBuilder(BuildContext context, Object error, StackTrace? stackTrace) {
     return Container(
       width: 70,
