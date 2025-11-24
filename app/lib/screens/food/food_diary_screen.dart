@@ -34,8 +34,6 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
 
     // 임시 데이터 (디자인 확인용)
     final List<Map<String, dynamic>> assetLogs = [
-      {'imageUrl': 'assets/images/pears.jpg', 'name': '설탕 절인 토마토', 'portion': '100.0g', 'calories': 73, 'mealType': '간식', 'date': '9/19', 'isAsset': true, 'rawLog': 'DUMMY|설탕 절인 토마토|100.0g|73kcal|0g|0g|0g|간식|9/19 00:00'},
-      {'imageUrl': 'assets/images/pizza.jpg', 'name': '피자', 'portion': '90.0g', 'calories': 237, 'mealType': '저녁', 'date': '9/19', 'isAsset': true, 'rawLog': 'DUMMY|피자|90.0g|237kcal|0g|0g|0g|저녁|9/19 00:00'},
     ];
 
     // 저장된 데이터 파싱

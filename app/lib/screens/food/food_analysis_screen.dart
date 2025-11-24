@@ -41,6 +41,12 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
     '지방': '0g',
   };
 
+  final List<String> _mealTypes = ['아침', '점심', '저녁', '간식'];
+
+  String _selectedMealType = '점심';
+
+  Map<String, dynamic>? _finalAnalysisResult;
+
   @override
   void initState() {
     super.initState();
@@ -244,6 +250,8 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
       setState(() {
         final foodNameDisplay = finalData['food_name']?.toString() ?? '분석 실패';
 
+        _finalAnalysisResult = finalData;
+
         _nutritionData = {
           '음식': foodNameDisplay,
           '섭취량': '${finalData['serving_size']?.toStringAsFixed(0) ?? '0'}g', // 소수점 제거
@@ -255,9 +263,6 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
         _isLoading = false;
         _showRetryUI = false; // 성공했으므로 숨김
       });
-
-      // 5. 분석 결과를 SharedPreferences에 저장
-      await _saveFoodLog(widget.image.path, finalData);
 
     } catch (e) {
       // USDA 검색 실패 또는 기타 에러 처리
@@ -291,15 +296,13 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
   }
 
   // SharedPreferences에 로그 저장 (이전과 동일)
-  Future<void> _saveFoodLog(String imagePath, Map<String, dynamic> data) async {
+  Future<void> _saveFoodLog(String imagePath, Map<String, dynamic> data, String mealType) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> savedLogs = prefs.getStringList('food_logs') ?? [];
 
     final now = DateTime.now();
     final dateStr = '${now.month}/${now.day}';
     final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-
-    const mealType = '점심';
 
     final newLog =
         '$imagePath|'
@@ -412,6 +415,38 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ⭐ 식사 유형 선택 드롭다운 추가
+                  const Text('식사 시간 선택', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedMealType,
+                        isExpanded: true,
+                        icon: const Icon(Icons.arrow_downward),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            // _selectedMealType 상태 변수는 _FoodAnalysisScreenState에 정의되어 있다고 가정
+                            _selectedMealType = newValue!;
+                          });
+                        },
+                        items: _mealTypes.map<DropdownMenuItem<String>>((String value) {
+                          // _mealTypes 리스트는 _FoodAnalysisScreenState에 정의되어 있다고 가정
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
                   _buildNutritionInfo('음식', _nutritionData['음식']!),
                   _buildNutritionInfo('섭취량', _nutritionData['섭취량']!),
                   _buildNutritionInfo('섭취 칼로리', _nutritionData['섭취 칼로리']!),
@@ -419,6 +454,31 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
                   _buildNutritionInfo('탄수화물', _nutritionData['탄수화물']!),
                   _buildNutritionInfo('단백질', _nutritionData['단백질']!),
                   _buildNutritionInfo('지방', _nutritionData['지방']!),
+
+                  // 기록 저장하기 버튼 추가
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (_finalAnalysisResult != null && widget.image != null) {
+                          // _saveFoodLog 함수는 _selectedMealType을 인수로 받도록 수정되어야 합니다.
+                          await _saveFoodLog(
+                            widget.image!.path,
+                            _finalAnalysisResult!,
+                            _selectedMealType,
+                          );
+                          if (mounted) Navigator.pop(context);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text('기록 저장하기', style: TextStyle(color: Colors.white, fontSize: 18)),
+                    ),
+                  ),
                 ],
               ),
             // -----------------------------
