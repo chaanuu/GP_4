@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // SharedPreferences 추가
+import 'package:image_picker/image_picker.dart';
 import 'dart:io'; // File 사용을 위해 추가
 import '../../providers/nav_provider.dart';
+import 'food_analysis_screen.dart';
 
 // ConsumerStatefulWidget으로 변경
 class FoodDiaryScreen extends ConsumerStatefulWidget {
@@ -32,8 +34,8 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
 
     // 임시 데이터 (디자인 확인용)
     final List<Map<String, dynamic>> assetLogs = [
-        {'imageUrl': 'assets/images/pears.jpg', 'name': '설탕 절인 토마토', 'portion': '100g', 'calories': 73, 'mealType': '간식', 'date': '9/19', 'isAsset': true},
-        {'imageUrl': 'assets/images/pizza.jpg', 'name': '피자', 'portion': '90g', 'calories': 237, 'mealType': '저녁', 'date': '9/19', 'isAsset': true},
+        {'imageUrl': 'assets/images/pears.jpg', 'name': '설탕 절인 토마토', 'portion': '100.0g', 'calories': 73, 'mealType': '간식', 'date': '9/19', 'isAsset': true},
+        {'imageUrl': 'assets/images/pizza.jpg', 'name': '피자', 'portion': '90.0g', 'calories': 237, 'mealType': '저녁', 'date': '9/19', 'isAsset': true},
     ];
 
     // 저장된 데이터 파싱
@@ -46,7 +48,9 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
         'imageUrl': parts[0],
         'name': parts.length > 1 ? parts[1] : '이름 없음',
         'portion': parts.length > 2 ? parts[2] : 'N/A',
-        'calories': parts.length > 3 ? int.tryParse(parts[3].replaceAll('kcal', '')) ?? 0 : 0,
+        'calories': parts.length > 3
+            ? (double.tryParse(parts[3].replaceAll('kcal', '')) ?? 0.0).round()
+            : 0,
         'mealType': parts.length > 4 ? parts[4] : '기타',
         // 날짜만 분리 (예: "9/20 18:30" -> "9/20")
         'date': parts.length > 5 ? parts[5].split(' ')[0] : '날짜 없음',
@@ -60,6 +64,47 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
       // 최신 로그를 위에 표시하고 싶다면 .reversed를 제거하고 parsedLogs만 사용하세요.
       _isLoading = false;
     });
+  }
+
+  void _onAddTapped() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('갤러리에서 선택'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ✅ 추가: 이미지 선택 및 FoodAnalysisScreen으로 이동
+  Future<void> _pickImage(ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: source);
+
+    if (image != null && mounted) {
+      // FoodAnalysisScreen으로 XFile 객체 전달
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FoodAnalysisScreen(image: image),
+        ),
+      ).then((_) {
+        // 분석 화면에서 돌아왔을 때, 로그 목록을 새로고침합니다.
+        _loadFoodLogs();
+      });
+    }
   }
 
   @override
@@ -76,6 +121,14 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
         title: const Text('식습관 분석', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 1,
+
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.black),
+            onPressed: _onAddTapped, // 위에서 정의한 함수 연결
+          ),
+        ],
+
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

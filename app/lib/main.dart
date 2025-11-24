@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart'; // 파일 저장을 위해 추가
 import 'package:shared_preferences/shared_preferences.dart'; // 경로 저장을 위해 추가
-import 'dart:io'; // File 사용을 위해 추가
+// File 사용을 위해 추가
 import 'package:intl/intl.dart'; // 날짜 포맷을 위해 추가
 
 // Provider import
@@ -30,9 +30,11 @@ import 'screens/body_log/compare_result_screen.dart';
 // ✅ 누락되었던 import 추가
 import 'screens/home/personal_info.dart';
 import 'screens/home/preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -127,11 +129,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   Future<void> _pickImage(ImageSource source, String type) async {
     final ImagePicker picker = ImagePicker();
-    // ⚠️ [수정 시작]: Windows 테스트를 위해 source를 ImageSource.gallery로 고정합니다.
-    // 나중에 모바일 에뮬레이터에서 테스트할 때는 이 줄을 주석 처리하고 원본 source를 사용하세요.
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    // ⚠️ [수정 끝]
-    // final XFile? image = await picker.pickImage(source: source);
+    final XFile? image = await picker.pickImage(source: source);
 
     if (image != null) {
       if (type == 'food') {
@@ -199,9 +197,9 @@ class _AppShellState extends ConsumerState<AppShell> {
         floatingActionButton: FloatingActionButton(
           onPressed: _onCameraTapped,
           backgroundColor: Colors.black,
-          child: const Icon(Icons.camera_alt, color: Colors.white),
           elevation: 2.0,
           shape: const CircleBorder(),
+          child: const Icon(Icons.camera_alt, color: Colors.white),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         bottomNavigationBar: BottomAppBar(
