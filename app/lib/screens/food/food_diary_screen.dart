@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../providers/nav_provider.dart';
 import 'food_analysis_screen.dart';
+import 'food_detail_screen.dart';
 
 // ConsumerStatefulWidget으로 변경
 class FoodDiaryScreen extends ConsumerStatefulWidget {
@@ -33,8 +34,8 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
 
     // 임시 데이터 (디자인 확인용)
     final List<Map<String, dynamic>> assetLogs = [
-      {'imageUrl': 'assets/images/pears.jpg', 'name': '설탕 절인 토마토', 'portion': '100.0g', 'calories': 73, 'mealType': '간식', 'date': '9/19', 'isAsset': true},
-      {'imageUrl': 'assets/images/pizza.jpg', 'name': '피자', 'portion': '90.0g', 'calories': 237, 'mealType': '저녁', 'date': '9/19', 'isAsset': true},
+      {'imageUrl': 'assets/images/pears.jpg', 'name': '설탕 절인 토마토', 'portion': '100.0g', 'calories': 73, 'mealType': '간식', 'date': '9/19', 'isAsset': true, 'rawLog': 'DUMMY|설탕 절인 토마토|100.0g|73kcal|0g|0g|0g|간식|9/19 00:00'},
+      {'imageUrl': 'assets/images/pizza.jpg', 'name': '피자', 'portion': '90.0g', 'calories': 237, 'mealType': '저녁', 'date': '9/19', 'isAsset': true, 'rawLog': 'DUMMY|피자|90.0g|237kcal|0g|0g|0g|저녁|9/19 00:00'},
     ];
 
     // 저장된 데이터 파싱
@@ -44,6 +45,8 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
 
       final parts = item.split('|');
 
+      final bool isNewFormat = parts.length >= 9;
+
       return {
         'imageUrl': parts[0],
         'name': parts.length > 1 ? parts[1] : '이름 없음',
@@ -52,10 +55,11 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
         'calories': parts.length > 3
             ? (double.tryParse(parts[3].replaceAll('kcal', '')) ?? 0.0).round()
             : 0,
-        'mealType': parts.length > 4 ? parts[4] : '기타',
-        'date': parts.length > 5 ? parts[5].split(' ')[0] : '날짜 없음',
+        'mealType': isNewFormat ? parts[7] : (parts.length > 4 ? parts[4] : '기타'),
+        'date': (isNewFormat ? parts[8] : (parts.length > 5 ? parts[5] : '날짜 없음')).split(' ')[0],
         'isAsset': false,
         'originalIndex': originalIndex, // 삭제를 위해 원본 인덱스 저장
+        'rawLog' : item,
       };
     }).toList();
 
@@ -97,14 +101,6 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
         return SafeArea(
           child: Wrap(
             children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('음식 사진 촬영'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.camera);
-                },
-              ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: const Text('갤러리에서 선택'),
@@ -201,19 +197,47 @@ class _FoodDiaryScreenState extends ConsumerState<FoodDiaryScreen> {
                     ],
                   ),
                 ),
+
                 // ----------------------------------------------------
-                // ✅ 수정: 날짜와 삭제 버튼을 포함하는 Row 추가
+                // ✅ 수정된 Row: 날짜, 상세 버튼(...), 삭제 버튼(X) 포함
                 // ----------------------------------------------------
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // 날짜 표시
                     Text(log['date'], style: TextStyle(color: Colors.grey[600])),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 8), // 날짜와 버튼 사이 간격
+
+                    if (!isAsset) // 실제 데이터에만 버튼 표시
+                      IconButton(
+                        icon: const Icon(Icons.more_horiz, color: Colors.black, size: 20),
+                        onPressed: () {
+                          final rawLog = log['rawLog'] as String? ?? '';
+                          // 'rawLog'에 저장된 원본 문자열을 FoodDetailScreen에 전달하여 상세 페이지로 이동
+                          if (rawLog.isNotEmpty) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FoodDetailScreen(logEntry: rawLog),
+                              ),
+                            );
+                          } else {
+                            // rawLog가 없으면 오류 메시지를 띄우거나 아무것도 하지 않음
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('상세 정보를 불러올 수 없습니다.')),
+                            );
+                          }
+                        },
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+
+                    const SizedBox(width: 4), // 상세 버튼과 삭제 버튼 사이 간격
+
                     if (!isAsset) // 실제 데이터에만 삭제 버튼 표시
                       IconButton(
-                        icon: const Icon(Icons.close, color: Colors.red, size: 18),
+                        icon: const Icon(Icons.close, color: Colors.red, size: 18), // 삭제 버튼 색상 변경 (강조)
                         onPressed: () {
-                          // _deleteFoodLog 호출 시 원본 인덱스와 isAsset 플래그 전달
                           _deleteFoodLog(
                               log['originalIndex']!,
                               log['isAsset'] ?? false

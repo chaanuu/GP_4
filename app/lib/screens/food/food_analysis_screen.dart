@@ -7,19 +7,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
-// ----------------------------------------------------
-// ✅ 1. API Key Getters 및 URL 함수로 수정
-// ----------------------------------------------------
+// API Key Getters 및 URL 함수 (이전과 동일)
 String? get GOOGLE_VISION_API_KEY => dotenv.env['GOOGLE_VISION_API_KEY'];
-
-// final USDA_API_KEY = dotenv.env['USDA_API_KEY'];
 String? get USDA_API_KEY => dotenv.env['USDA_API_KEY'];
 
 String getVisionApiUrl() {
   final key = GOOGLE_VISION_API_KEY ?? '';
   return 'https://vision.googleapis.com/v1/images:annotate?key=$key';
 }
-// ----------------------------------------------------
 
 
 class FoodAnalysisScreen extends StatefulWidget {
@@ -31,11 +26,12 @@ class FoodAnalysisScreen extends StatefulWidget {
 }
 
 class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
+  final TextEditingController _foodNameController = TextEditingController();
 
   bool _isLoading = true;
   String? _errorMessage;
+  bool _showRetryUI = false;
 
-  // 분석 결과를 담을 초기 데이터 맵
   Map<String, String> _nutritionData = {
     '음식': '분석 중...',
     '섭취량': '0g',
@@ -51,6 +47,13 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
     _analyzeFoodWithVision(widget.image);
   }
 
+  @override
+  void dispose() {
+    _foodNameController.dispose();
+    super.dispose();
+  }
+
+  // USDA API를 호출하여 영양 정보를 가져오는 함수 (이전과 동일)
   Future<Map<String, String>?> _getUsdaNutritionInfo(String foodName) async {
     final usdaKey = USDA_API_KEY;
     if (usdaKey == null || usdaKey.isEmpty) {
@@ -58,8 +61,6 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
       return null;
     }
 
-    // 1단계: 음식 검색 (fdcId 찾기)
-    // ✅ 수정: usdaKey 변수 사용 (널 체크 완료)
     final searchUrl = Uri.parse(
         "https://api.nal.usda.gov/fdc/v1/foods/search?api_key=$usdaKey&query=$foodName&dataType=SR%20Legacy"
     );
@@ -73,15 +74,12 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
 
       final searchResults = jsonDecode(searchResponse.body);
 
-      // 검색 결과가 없으면 종료
       if (searchResults['foods'] == null || searchResults['foods'].isEmpty) {
         return null;
       }
 
       final fdcId = searchResults['foods'][0]['fdcId'];
 
-      // 2단계: 상세 영양 정보 조회
-      // ✅ 수정: usdaKey 변수 사용 (널 체크 완료)
       final detailsUrl = Uri.parse(
           "https://api.nal.usda.gov/fdc/v1/food/$fdcId?api_key=$usdaKey"
       );
@@ -109,22 +107,16 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
         if (targetNutrients.contains(name)) {
           if (name == 'Energy') {
             if (unit.toUpperCase() == 'KJ') {
-              // 1 kcal ≈ 4.184 kJ 이므로, kJ를 kcal로 변환
               value = value / 4.184;
-              unit = 'kcal'; // 단위를 kcal로 변경
-
+              unit = 'kcal';
             } else if (unit.toUpperCase() != 'KCAL') {
-              // kJ나 kcal이 아닌 다른 이상한 단위인 경우 로깅하고 건너뜁니다.
-              print('경고: Energy 단위가 $unit 입니다. (예상: kcal 또는 kJ)');
               continue;
             }
           }
-          // Python 코드와 동일하게 저장 (예: "100.0 kcal")
           nutritionData[name] = "${value.toStringAsFixed(1)} ${unit}";
         }
       }
 
-      // USDA API가 반환하는 음식 이름도 포함
       nutritionData['food_name_usda'] = foodDetails['description'] ?? foodName;
 
       return nutritionData;
@@ -135,15 +127,15 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
     }
   }
 
-  // --- Google Vision API를 사용한 분석 및 데이터 로직 ---
+  // --- Google Vision API를 사용한 분석 및 데이터 로직 (초기 진입) ---
   Future<void> _analyzeFoodWithVision(XFile image) async {
     final visionKey = GOOGLE_VISION_API_KEY;
 
-    // 1. Vision API 키 누락 확인
     if (visionKey == null || visionKey.isEmpty) {
       setState(() {
         _errorMessage = '⚠️ Google Vision API 키를 설정해야 합니다.';
         _isLoading = false;
+        _showRetryUI = false;
       });
       return;
     }
@@ -151,15 +143,14 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _showRetryUI = false; // 초기 분석 시에는 재시도 UI를 숨김
       _nutritionData['음식'] = 'Google Vision API로 분석 중...';
     });
 
     try {
-      // 이미지 파일을 base64로 인코딩
       List<int> imageBytes = await image.readAsBytes();
       String base64Image = base64Encode(imageBytes);
 
-      // Vision API 요청 본문 (라벨 및 웹 검색 사용)
       final visionRequestBody = jsonEncode({
         "requests": [
           {
@@ -172,8 +163,6 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
         ]
       });
 
-      // 2. Google Vision API 호출
-      // ✅ 수정: getVisionApiUrl() 함수를 사용하여 URL 가져오기
       final visionResponse = await http.post(
         Uri.parse(getVisionApiUrl()),
         headers: {"Content-Type": "application/json"},
@@ -186,33 +175,51 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
 
       final visionJson = jsonDecode(visionResponse.body);
 
-      // 3. Vision API 응답에서 가장 가능성 높은 음식 이름 추출
       String predictedFood = '알 수 없는 음식';
       var responses = visionJson['responses'];
 
       if (responses != null && responses.isNotEmpty) {
-        // 웹 감지에서 가장 적합한 엔티티를 찾습니다 (일반적으로 가장 정확)
         var webEntities = responses[0]['webDetection']?['webEntities'];
         if (webEntities != null && webEntities.isNotEmpty) {
-          // 가장 높은 점수를 가진 엔티티의 설명(description)을 사용
           predictedFood = webEntities[0]['description']?.toString() ?? '알 수 없는 음식';
         }
 
-        // 웹 감지가 없을 경우 라벨 감지를 확인합니다.
         if (predictedFood == '알 수 없는 음식') {
           var labels = responses[0]['labelAnnotations'];
           if (labels != null && labels.isNotEmpty) {
-            // 첫 번째 라벨을 사용
             predictedFood = labels[0]['description']?.toString() ?? '알 수 없는 음식';
           }
         }
       }
 
-      // 4. 추출된 음식 이름으로 임시 영양 정보 가져오기
-      Map<String, String>? rawNutrition = await _getUsdaNutritionInfo(predictedFood);
+      // 추출된 음식 이름으로 영양 정보 분석을 시작합니다.
+      await _performAnalysis(predictedFood);
 
+    } catch (e) {
+      setState(() {
+        _errorMessage = '이미지 인식 중 오류 발생: ${e.toString()}';
+        _isLoading = false;
+        _showRetryUI = true; // 실패 시 사용자 입력 UI 표시
+      });
+    }
+  }
+
+  // --- 영양 정보 분석 및 저장 로직 (Vision 결과 또는 사용자 입력으로 실행됨) ---
+  Future<void> _performAnalysis(String foodName) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _showRetryUI = false;
+      _nutritionData['음식'] = '$foodName (USDA 검색 중...)';
+    });
+
+    try {
+      // 1. USDA 정보 가져오기 시도 (원본 이름)
+      Map<String, String>? rawNutrition = await _getUsdaNutritionInfo(foodName);
+
+      // 2. USDA 정보 가져오기 시도 (단어 분리 후 재시도)
       if (rawNutrition == null) {
-        final words = predictedFood.split(' ');
+        final words = foodName.split(' ');
         if (words.length > 1) {
           final lastWord = words.last;
           rawNutrition = await _getUsdaNutritionInfo(lastWord);
@@ -220,62 +227,70 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
       }
 
       if (rawNutrition == null) {
+        // USDA 데이터베이스에서 정보를 찾지 못한 경우
         throw Exception('USDA 데이터베이스에서 영양 정보를 찾을 수 없습니다.');
       }
 
-      // 4. USDA 결과 파싱 및 UI 업데이트를 위한 최종 맵 구성
-      // Python의 ORDER MAPPING 로직과 유사하게 파싱합니다.
+      // 3. USDA 결과 파싱 및 UI 업데이트
       final Map<String, dynamic> finalData = {};
-
-      finalData['food_name'] = rawNutrition['food_name_usda'] ?? predictedFood;
-      finalData['serving_size'] = 100.0; // USDA 기본값(100g)으로 가정
-
-      // 영양소 값 추출
+      finalData['food_name'] = rawNutrition['food_name_usda'] ?? foodName;
+      finalData['serving_size'] = 100.0;
       finalData['calories'] = _extractValue(rawNutrition['Energy']);
       finalData['carbs'] = _extractValue(rawNutrition['Carbohydrate, by difference']);
       finalData['protein'] = _extractValue(rawNutrition['Protein']);
       finalData['fat'] = _extractValue(rawNutrition['Total lipid (fat)']);
 
-      // 5. UI 및 SharedPreferences 업데이트
+      // 4. UI 및 SharedPreferences 업데이트
       setState(() {
         final foodNameDisplay = finalData['food_name']?.toString() ?? '분석 실패';
 
         _nutritionData = {
           '음식': foodNameDisplay,
-          '섭취량': '${finalData['serving_size']?.toString() ?? '0'}g',
-          '섭취 칼로리': '${finalData['calories']?.toString() ?? '0'}kcal',
-          '탄수화물': '${finalData['carbs']?.toString() ?? '0'}g',
-          '단백질': '${finalData['protein']?.toString() ?? '0'}g',
-          '지방': '${finalData['fat']?.toString() ?? '0'}g',
+          '섭취량': '${finalData['serving_size']?.toStringAsFixed(0) ?? '0'}g', // 소수점 제거
+          '섭취 칼로리': '${finalData['calories']?.toStringAsFixed(1) ?? '0'}kcal',
+          '탄수화물': '${finalData['carbs']?.toStringAsFixed(1) ?? '0'}g',
+          '단백질': '${finalData['protein']?.toStringAsFixed(1) ?? '0'}g',
+          '지방': '${finalData['fat']?.toStringAsFixed(1) ?? '0'}g',
         };
         _isLoading = false;
+        _showRetryUI = false; // 성공했으므로 숨김
       });
 
-      // 6. 분석 결과를 SharedPreferences에 저장
-      await _saveFoodLog(image.path, finalData);
+      // 5. 분석 결과를 SharedPreferences에 저장
+      await _saveFoodLog(widget.image.path, finalData);
 
     } catch (e) {
-      // 네트워크 또는 기타 에러 처리
+      // USDA 검색 실패 또는 기타 에러 처리
       setState(() {
-        _errorMessage = '분석 중 오류 발생: ${e.toString()}';
+        _errorMessage = '분석 오류: ${e.toString()}';
         _isLoading = false;
+        _showRetryUI = true; // 실패 시 사용자 입력 UI 표시
       });
     }
   }
 
-  // --- 헬퍼 함수: 문자열에서 숫자 값만 추출 ---
+  void _retryAnalysis() {
+    final manualFoodName = _foodNameController.text.trim();
+    if (manualFoodName.isNotEmpty) {
+      _performAnalysis(manualFoodName);
+    } else {
+      setState(() {
+        _errorMessage = '음식 이름을 입력해 주세요.';
+      });
+    }
+  }
+
+  // --- 헬퍼 함수: 문자열에서 숫자 값만 추출 (이전과 동일) ---
   double _extractValue(String? valueStr) {
     if (valueStr == null) return 0.0;
     try {
-      // "100.0 kcal"에서 "100.0"만 추출하여 double로 변환
       return double.tryParse(valueStr.split(' ')[0]) ?? 0.0;
     } catch (e) {
       return 0.0;
     }
   }
 
-
-  // SharedPreferences에 로그 저장 (기존과 동일)
+  // SharedPreferences에 로그 저장 (이전과 동일)
   Future<void> _saveFoodLog(String imagePath, Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> savedLogs = prefs.getStringList('food_logs') ?? [];
@@ -284,15 +299,16 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
     final dateStr = '${now.month}/${now.day}';
     final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
-    // ⚠️ 식사 유형은 임시로 '점심'으로 가정. 실제는 UI에서 선택해야 함.
     const mealType = '점심';
 
-    // data 맵에서 직접 값 추출 (getDummyNutrition 구조와 일치)
     final newLog =
         '$imagePath|'
         '${data['food_name']?.toString() ?? '알 수 없음'}|'
-        '${data['serving_size']?.toString() ?? '0'}g|'
-        '${data['calories']?.toString() ?? '0'}kcal|' // 칼로리만 kcal 붙여서 저장
+        '${data['serving_size']?.toStringAsFixed(0) ?? '0'}g|'
+        '${data['calories']?.toStringAsFixed(1) ?? '0'}kcal|'
+        '${data['carbs']?.toStringAsFixed(1) ?? '0'}g|'
+        '${data['protein']?.toStringAsFixed(1) ?? '0'}g|'
+        '${data['fat']?.toStringAsFixed(1) ?? '0'}g|'
         '$mealType|'
         '$dateStr $timeStr';
 
@@ -300,16 +316,15 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
     await prefs.setStringList('food_logs', savedLogs);
   }
 
-  // (나머지 build 및 _buildNutritionInfo 함수는 이전과 동일)
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-            leading: IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.black), onPressed: () => Navigator.of(context).pop()),
-            title: const Text('음식 분석', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-            backgroundColor: Colors.white,
-          elevation: 1,
-        ),
+      appBar: AppBar(
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.black), onPressed: () => Navigator.of(context).pop()),
+        title: const Text('음식 분석', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 1,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -342,18 +357,58 @@ class _FoodAnalysisScreenState extends State<FoodAnalysisScreen> {
                 ),
               )
             else if (_errorMessage != null)
+            // ----------------------------------------------------
+            // ✅ 수정: 에러 메시지와 재시도 UI 표시
+            // ----------------------------------------------------
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(32.0),
-                  child: Text(
-                    '⚠️ 분석 오류: $_errorMessage',
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                    textAlign: TextAlign.center,
+                  child: Column(
+                    children: [
+                      Text(
+                        '⚠️ $_errorMessage',
+                        style: const TextStyle(color: Colors.red, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      if (_showRetryUI)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              '음식 이름을 직접 입력해 주세요:',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _foodNameController,
+                              decoration: InputDecoration(
+                                hintText: '예: 닭가슴살 샐러드',
+                                border: const OutlineInputBorder(),
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: _foodNameController.clear,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _retryAnalysis,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              child: const Text('영양 정보 다시 검색', style: TextStyle(color: Colors.white, fontSize: 16)),
+                            ),
+                          ],
+                        ),
+                    ],
                   ),
                 ),
               )
+            // ----------------------------------------------------
             else
-            // 데이터 로드 성공 시 영양 정보 표시
+            // 데이터 로드 성공 시 영양 정보 표시 (이전과 동일)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
