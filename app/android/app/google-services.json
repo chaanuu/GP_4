@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "567215995094",
+    "project_id": "gp-4-prj",
+    "storage_bucket": "gp-4-prj.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:567215995094:android:562e1774e78f656b3bf177",
+        "android_client_info": {
+          "package_name": "com.example.teamapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2uAv752ejERlmf7CzdMiDKu7hQvQ0tf4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
