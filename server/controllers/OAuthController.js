@@ -1,4 +1,4 @@
-import { AuthService } from "../services/Auth/AuthService";
+import { AuthService } from '../services/Auth/AuthService.js';
 
 export class OAuthController {
     static async googleLogin(req, res) {
