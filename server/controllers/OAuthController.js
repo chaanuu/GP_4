@@ -1,4 +1,5 @@
 import { AuthService } from '../services/Auth/AuthService.js';
+import { ValidationError } from '../utils/errors.js'
 
 export class OAuthController {
     static async googleLogin(req, res) {
