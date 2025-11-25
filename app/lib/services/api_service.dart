@@ -5,7 +5,7 @@ import '../models/workout_program.dart';
 
 class ApiService {
   // Docker 실행 시 외부 포트 8000번 사용
-  static const String _baseUrl = 'http://10.0.2.2:8000';
+  static const String _baseUrl = 'http://jyb1018.iptime.org:3000';
   static const String _tokenKey = 'auth_token';
   static const String _userIdKey = 'user_id';
 
@@ -123,13 +123,27 @@ class ApiService {
     return null;
   }
 
-  Future<bool> updateUserInfo(String name, {String? password}) async {
+  Future<bool> updateUserInfo(
+      String name, {
+        double? height,
+        double? weight,
+        int? age,
+        String? gender,
+        String? password,
+      }) async {
     try {
       final token = await _getToken();
       final userId = await _getUserId();
       if (userId == null) return false;
 
-      final Map<String, dynamic> body = {'name': name};
+      final Map<String, dynamic> body = {
+        'name': name,
+        'height': height,
+        'weight': weight,
+        'age': age,
+        'gender': gender,
+      };
+
       if (password != null && password.isNotEmpty) {
         body['password'] = password;
       }
