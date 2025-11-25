@@ -28,6 +28,8 @@ import { foodRouter } from './routes/Food.js';
 import { exerciseLogRouter } from './routes/ExerciseLog.js';
 import { mealLogRouter } from './routes/MealLog.js';
 import { authRouter } from './routes/Auth.js';
+import { OAuthRouter } from './routes/OAuth.js';
+
 
 const port = config.port || 3000;
 
@@ -65,15 +67,16 @@ const httpTerminator = createHttpTerminator({ server });
 
 // 인증 라우트 설정
 app.use('/auth', authRouter);
+app.use('/oauth', OAuthRouter);
 
 // 인증 미들웨어 설정
-app.use('/api', authMiddleware);
+// app.use('/api', authMiddleware);
 
 // 라우터 설정
 app.use('/api', router);
 
 // 업로드된 파일을 제공 (대부분 이미지)
-app.use('/uploads', express.static('uploads'));
+app.use('/api/uploads', express.static('uploads'));
 
 
 
