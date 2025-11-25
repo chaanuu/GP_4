@@ -41,7 +41,7 @@ class DB {
             conn = await this.pool.getConnection();
             // SQL 쿼리와 파라미터를 사용하여 쿼리를 실행합니다.
             // execute는 SQL Injection 공격을 방지하기 위해 Prepared Statements를 사용합니다.
-            const [rows] = await conn.execute(sql, params);
+            const [rows] = await conn.query(sql, params);
             return rows;
         } catch (error) {
             // 에러 발생 시 콘솔에 로그를 남기고 에러를 다시 던집니다.
@@ -84,17 +84,26 @@ class DB {
      * @returns {Promise<Array>} 조회된 데이터 배열.
      */
     async read(table, where = {}, columns = '*') {
+        // 1. WHERE 절 및 조건 값 (params) 준비
         const whereClauses = Object.keys(where).map(key => `${key} = ?`).join(' AND ');
         const params = Object.values(where);
+
+        // 2. SQL 쿼리 문자열 정의
+        //    테이블 이름 위치에 플레이스홀더 ??를 그대로 유지합니다.
         const sql = `SELECT ${Array.isArray(columns) ? columns.join(', ') : columns} FROM ?? ${whereClauses ? `WHERE ${whereClauses}` : ''}`;
 
-        // 테이블 이름을 params의 맨 앞에 추가합니다.
-        params.unshift(table);
+        // 3. [핵심 수정] 테이블 이름을 배열의 맨 앞에 추가
+        //    '??'에 바인딩될 값이 배열의 첫 번째 요소가 됩니다.
+        const finalParams = [table, ...params]; // 새로운 배열 생성
 
-        // SQL에서 테이블 이름 플레이스홀더를 ??로 변경해야 합니다.
-        const finalSql = sql.replace('FROM ??', 'FROM ??');
+        console.log('params: ', finalParams); // 변경된 params를 로깅
+        console.log('Final SQL:', sql); // sql 변수만 사용
 
-        return this.query(finalSql, params);
+        // 최종 쿼리 실행
+        // sql: SELECT * FROM ?? WHERE id = ?
+        // finalParams: ['users', 1]
+        // 결과: SELECT * FROM `users` WHERE id = 1
+        return this.query(sql, finalParams);
     }
 
     /**
@@ -151,5 +160,5 @@ class DB {
 export const db = new DB(dbConfig);
 // TODO : 테이블 초기화 (없으면 초기파일 불러오기) 코드 작성
 const conn = await db.getConnection();
-db.tableExists('users').then(res => console.log(res)).catch(err => console.error(err));
-db.tableExists('foods').then(res => console.log(res)).catch(err => console.error(err));
+// db.tableExists('users').then(res => console.log(res)).catch(err => console.error(err));
+// db.tableExists('foods').then(res => console.log(res)).catch(err => console.error(err));
