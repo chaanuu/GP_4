@@ -27,14 +27,22 @@ import 'screens/workout/program_builder_screen.dart';
 import 'screens/workout/save_program_screen.dart';
 import 'screens/workout/program_detail_screen.dart';
 import 'screens/body_log/compare_result_screen.dart';
-// ✅ 누락되었던 import 추가
 import 'screens/home/personal_info.dart';
 import 'screens/home/preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await dotenv.load(fileName: ".env");
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const ProviderScope(child: MyApp()));
 }
 

@@ -23,7 +23,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
   final List<String> _mealTypes = ['아침', '점심', '저녁', '간식'];
   bool _isLoading = true;
 
-  // ⭐ 100g당 기준 영양소 값 (재계산을 위한 베이스)
+  // 100g당 기준 영양소 값 (재계산을 위한 베이스)
   double _baseCaloriesPer100g = 0.0;
   double _baseCarbsPer100g = 0.0;
   double _baseProteinPer100g = 0.0;
@@ -42,7 +42,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
   @override
   void dispose() {
     _foodNameController.dispose();
-    _amountController.dispose(); // ⭐ 추가: 컨트롤러 정리
+    _amountController.dispose();
     super.dispose();
   }
 
@@ -89,7 +89,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
       _originalIndex = index;
       final parsedData = _parseLogEntry(logEntry);
 
-      // ⭐ 현재 저장된 섭취량과 영양소 값 추출
+      // 현재 저장된 섭취량과 영양소 값 추출
       final amountString = parsedData['섭취량']!.replaceAll(RegExp(r'[a-zA-Z]'), '').trim(); // 숫자만 추출 (g 제거)
       final amount = double.tryParse(amountString) ?? 0.0;
 
@@ -98,7 +98,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
       final currentProtein = double.tryParse(parsedData['단백질']!.replaceAll(RegExp(r'[a-zA-Z]'), '').trim()) ?? 0.0;
       final currentFat = double.tryParse(parsedData['지방']!.replaceAll(RegExp(r'[a-zA-Z]'), '').trim()) ?? 0.0;
 
-      // ⭐ 100g당 기준 영양소 값 계산 (재계산의 기준이 됨)
+      // 100g당 기준 영양소 값 계산 (재계산의 기준이 됨)
       final ratio = amount > 0 ? 100 / amount : 0.0;
 
       _baseCaloriesPer100g = currentCalories * ratio;
@@ -123,7 +123,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     }
   }
 
-  // ⭐ 섭취량 변경 시 영양소 재계산 함수
+  // 섭취량 변경 시 영양소 재계산 함수
   void _recalculateNutrition(String amountString) {
     // 숫자만 추출
     final amountText = amountString.replaceAll(RegExp(r'[^0-9.]'), '').trim();
@@ -161,7 +161,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     });
   }
 
-  // ⭐ 영양 정보를 재분석하는 함수 (클래스 멤버 함수로 유지)
+  // 영양 정보를 재분석하는 함수 (클래스 멤버 함수로 유지)
   Future<void> _reanalyzeFood() async {
     final imagePath = _nutritionData['imagePath'];
     final foodName = _foodNameController.text.trim();
@@ -225,7 +225,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
       return;
     }
 
-    // ⭐ 재계산된 값 추출 (UI 표시용 Map에서)
+    // 재계산된 값 추출 (UI 표시용 Map에서)
     // 이 값들이 새로운 로그 항목에 저장됩니다.
     final newAmountString = _nutritionData['섭취량']!;
     final newCaloriesString = _nutritionData['섭취 칼로리']!;
@@ -333,7 +333,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ⭐ 수정 가능한 섭취량 필드 추가
+            // 수정 가능한 섭취량 필드 추가
             const Text('섭취량 (g)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54)),
             const SizedBox(height: 8),
             TextField(
@@ -344,7 +344,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                 contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 suffixText: 'g', // 단위 표시
               ),
-              onChanged: _recalculateNutrition, // ⭐ 값이 바뀔 때마다 영양소 재계산
+              onChanged: _recalculateNutrition, // 값이 바뀔 때마다 영양소 재계산
             ),
             const SizedBox(height: 24),
 
@@ -383,12 +383,12 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
             _buildNutritionInfo('기록 시간', _nutritionData['기록 시간']!),
             const Divider(height: 40),
 
-            _buildNutritionInfo('섭취량', _nutritionData['섭취량']!), // ⭐ 실시간 업데이트
-            _buildNutritionInfo('섭취 칼로리', _nutritionData['섭취 칼로리']!), // ⭐ 실시간 업데이트
+            _buildNutritionInfo('섭취량', _nutritionData['섭취량']!),
+            _buildNutritionInfo('섭취 칼로리', _nutritionData['섭취 칼로리']!),
             const Divider(height: 40),
-            _buildNutritionInfo('탄수화물', _nutritionData['탄수화물']!), // ⭐ 실시간 업데이트
-            _buildNutritionInfo('단백질', _nutritionData['단백질']!), // ⭐ 실시간 업데이트
-            _buildNutritionInfo('지방', _nutritionData['지방']!), // ⭐ 실시간 업데이트
+            _buildNutritionInfo('탄수화물', _nutritionData['탄수화물']!),
+            _buildNutritionInfo('단백질', _nutritionData['단백질']!),
+            _buildNutritionInfo('지방', _nutritionData['지방']!),
 
             const SizedBox(height: 32),
 
