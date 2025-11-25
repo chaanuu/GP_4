@@ -2,6 +2,14 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 
+import { fileURLToPath } from 'url'; // url 모듈에서 fileURLToPath 함수 import
+
+// 1. 현재 파일의 절대 경로를 계산합니다.
+const __filename = fileURLToPath(import.meta.url);
+
+// 2. 파일 경로에서 디렉토리 경로를 계산합니다.
+const __dirname = path.dirname(__filename);
+
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 
 if (!fs.existsSync(UPLOAD_DIR)) {

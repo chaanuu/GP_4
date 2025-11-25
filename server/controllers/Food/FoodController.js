@@ -1,6 +1,7 @@
 import { FoodService } from "../../services/Food/FoodService.js";
 import { PythonProcess } from '../../utils/PythonProcess.js';
 
+
 export class FoodController {
 
     static async analyzeFoodImage(req, res) {
@@ -44,7 +45,14 @@ export class FoodController {
         res.sendStatus(204);
     }
 
-
+    static async uploadFoodImage(req, res) {
+        try {
+            const imagePath = req.file.path; // Assuming you're using multer for file uploads
+            res.status(200).json({ message: 'Image uploaded successfully', path: imagePath });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    }
 
 
 }
