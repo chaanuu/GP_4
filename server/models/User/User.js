@@ -4,7 +4,8 @@ import { DuplicateEntryError, NotFoundError } from '../../utils/errors.js';
 
 
 export class User {
-    constructor(email, password_hash, name, provider = 'local', provider_id = null) {
+    constructor(email, password_hash, name, provider = 'local', provider_id = null,
+        height = null, weight = null, age = null, gender = null) {
         this.id = null; // DB에 저장되면 설정됨.
         this.email = email;
         this.name = name;
@@ -16,12 +17,19 @@ export class User {
         this.provider_id = provider_id;
         this.inbodys = [];
         this.nutrition = {};
+
+        this.height = height;
+        this.weight = weight;
+        this.age = age;
+        this.gender = gender;
+
+
     }
 
 
     static #fromDB(row) {
         if (!row) return null;
-        const user = new User(row.email, row.password_hash, row.name, row.provider, row.provider_id);
+        const user = new User(row.email, row.password_hash, row.name, row.provider, row.provider_id, row.height, row.weight, row.age, row.gender);
         user.id = row.id;
         // JSON으로 저장된 문자열을 객체로 파싱
         // user.inbodys = row.inbodys ? JSON.parse(row.inbodys) : [];

@@ -13,6 +13,11 @@ export class UserController {
         res.status(200).json(users);
     }
 
+    static async getUserByEmail(req, res) {
+        const user = await UserService.getUserByEmail(req.params.email);
+        res.status(200).json(user);
+    }
+
     // TODO : Service 에서 인증 처리 추가
     static async createUser(req, res) {
         const newUser = await UserService.registerUser(req.body.email, req.body.password);
