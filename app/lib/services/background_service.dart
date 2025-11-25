@@ -38,11 +38,11 @@ void onStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
 
   // 걸음 수 스트림 초기화
-  late Stream<StepCount> _stepCountStream;
-  late StreamSubscription<StepCount> _stepCountSubscription;
+  late Stream<StepCount> stepCountStream;
+  late StreamSubscription<StepCount> stepCountSubscription;
 
-  _stepCountStream = Pedometer.stepCountStream;
-  _stepCountSubscription = _stepCountStream.listen(_onStepCount);
+  stepCountStream = Pedometer.stepCountStream;
+  stepCountSubscription = stepCountStream.listen(_onStepCount);
 
   print("백그라운드 걸음 수 감지를 시작합니다.");
 

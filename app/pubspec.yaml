@@ -60,6 +60,7 @@ dependencies:
 
   # SVG 이미지 사용 (소셜 로그인 버튼 등)
   flutter_svg: ^2.0.10+1
+  flutter_dotenv: ^6.0.0
 
 
 
@@ -73,6 +74,7 @@ flutter:
 
   assets:
     - assets/images/
+    - .env
 
   fonts:
     - family: Inter

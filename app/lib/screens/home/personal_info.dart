@@ -154,7 +154,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
             const SizedBox(height: 16),
 
             DropdownButtonFormField<String>(
-              value: _gender,
+              initialValue: _gender,
               decoration: InputDecoration(
                 labelText: '성별',
                 border: const OutlineInputBorder(),

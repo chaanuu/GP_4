@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../auth/sign_in_screen.dart';
 
 class PreferencesScreen extends StatelessWidget {
   // const 생성자는 main.dart의 라우트 정의를 만족시킵니다.
