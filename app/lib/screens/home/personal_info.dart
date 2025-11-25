@@ -34,21 +34,43 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
     final userData = await api.getUserInfo();
 
     final prefs = await SharedPreferences.getInstance();
-    final height = prefs.getDouble('user_height') ?? 175.0;
-    final weight = prefs.getDouble('user_weight') ?? 70.0;
-    final age = prefs.getInt('user_age') ?? 25; // 나이 불러오기 (기본값 25)
-    final gender = prefs.getString('user_gender') ?? 'male';
+
+    // 서버 값이 우선, 없으면 로컬/기본값
+    final height = (userData?['height'] as num?)?.toDouble()
+        ?? prefs.getDouble('user_height')
+        ?? 175.0;
+
+    final weight = (userData?['weight'] as num?)?.toDouble()
+        ?? prefs.getDouble('user_weight')
+        ?? 70.0;
+
+    final age = (userData?['age'] as num?)?.toInt()
+        ?? prefs.getInt('user_age')
+        ?? 25;
+
+    final gender = prefs.getString('user_gender') ?? 'M';
+
+  // 기존값이 male/female이면 변환
+    if (gender == 'male') _gender = 'm';
+    else if (gender == 'female') _gender = 'f';
+    else _gender = gender;
 
     if (mounted) {
       setState(() {
         if (userData != null) {
           _nameController.text = userData['name'] ?? '';
           _emailController.text = userData['email'] ?? '';
+
+          // gender 변환
+          final g = userData['gender'];
+          if (g == 'male') _gender = 'm';
+          else if (g == 'female') _gender = 'f';
+          else _gender = g ?? 'm';
         }
         _heightController.text = height.toString();
         _weightController.text = weight.toString();
-        _ageController.text = age.toString(); // 나이 설정
-        _gender = gender;
+        _ageController.text = age.toString();
+
 
         _isLoading = false;
       });
@@ -59,12 +81,19 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
     setState(() => _isLoading = true);
 
     final api = ref.read(apiServiceProvider);
-    final success = await api.updateUserInfo(_nameController.text);
+    final success = await api.updateUserInfo(
+      _nameController.text.trim(),
+      height: double.tryParse(_heightController.text),
+      weight: double.tryParse(_weightController.text),
+      age: int.tryParse(_ageController.text),
+      gender: _gender,
+    );
 
+    // 원하면 SharedPreferences는 캐시 용도로만 사용
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('user_height', double.tryParse(_heightController.text) ?? 175.0);
     await prefs.setDouble('user_weight', double.tryParse(_weightController.text) ?? 70.0);
-    await prefs.setInt('user_age', int.tryParse(_ageController.text) ?? 25); // 나이 저장
+    await prefs.setInt('user_age', int.tryParse(_ageController.text) ?? 25);
     await prefs.setString('user_gender', _gender);
 
     setState(() {
@@ -72,18 +101,15 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
       _isEditing = false;
     });
 
-    if (mounted) {
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('정보가 수정되었습니다.')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('일부 정보(서버) 수정에 실패했습니다.')),
-        );
-      }
-    }
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(success ? '정보가 수정되었습니다.' : '일부 정보(서버) 수정에 실패했습니다.'),
+      ),
+    );
   }
+
 
   @override
   void dispose() {
@@ -154,7 +180,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
             const SizedBox(height: 16),
 
             DropdownButtonFormField<String>(
-              initialValue: _gender,
+              value: _gender,
               decoration: InputDecoration(
                 labelText: '성별',
                 border: const OutlineInputBorder(),
@@ -162,8 +188,8 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
                 fillColor: _isEditing ? Colors.white : const Color(0xFFF5F5F5),
               ),
               items: const [
-                DropdownMenuItem(value: 'male', child: Text('남성')),
-                DropdownMenuItem(value: 'female', child: Text('여성')),
+                DropdownMenuItem(value: 'm', child: Text('남성')),
+                DropdownMenuItem(value: 'f', child: Text('여성')),
               ],
               onChanged: _isEditing ? (value) {
                 setState(() {
