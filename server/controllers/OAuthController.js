@@ -7,6 +7,18 @@ export class OAuthController {
         return res.status(200).json({ message: "Google Login successful", newTokens });
     }
 
+    static async googleCallback(req, res) {
+        const { code } = req.body;
+        if (!code) {
+            throw new ValidationError('Authorization code is required');
+        }
+
+        const jwtTokens = await AuthService.googleCallback(code);
+
+        return res.status(200).json({ message: "Google Callback successful", jwtTokens });
+    }
+
+
 
     static async appleLogin(req, res) {
         const { idToken } = req.body;

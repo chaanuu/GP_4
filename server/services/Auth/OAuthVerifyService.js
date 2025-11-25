@@ -17,6 +17,12 @@ const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID);
  */
 
 export class OAuthVerifyService {
+
+    static async verifyGoogleCode(code) {
+        const { tokens } = await googleClient.getToken(code);
+        return tokens;
+    }
+
     static async verifyGoogleToken(idToken) {
         const ticket = await googleClient.verifyIdToken({
             idToken,

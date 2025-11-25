@@ -30,6 +30,8 @@ const config = {
 
     oauth: {
         googleClientId: process.env.GOOGLE_CLIENT_ID,
+        googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        googleRedirectUri: process.env.GOOGLE_REDIRECT_URI,
         appleClientId: process.env.APPLE_CLIENT_ID
     }
 };

@@ -4,8 +4,10 @@ import config from '../../config.js';
 import { UserService } from '../User/UserService.js';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils/errors.js';
 
-
 const jwtConfig = config.jwt;
+const oauthConfig = config.oauth;
+
+
 
 export class AuthService {
     static async localLogin(email, password) {
@@ -36,8 +38,7 @@ export class AuthService {
      * @returns {Promise<{accessToken: string, refreshToken: string}>}
      * 
      */
-    static async googleLogin(idToken) {
-        const payload = await OAuthVerifyService.verifyGoogleToken(idToken);
+    static async googleLogin(payload) {
         const user = await UserService.getUserByEmail(payload.email).catch((error) => {
             if (error instanceof NotFoundError) {
                 return null;
@@ -61,7 +62,7 @@ export class AuthService {
             'google',
             payload.sub
         );
-        return JwtService.generateTokens({ userId: newUser.id });
+        return await JwtService.generateTokens({ userId: newUser.id });
 
     }
 
@@ -114,6 +115,25 @@ export class AuthService {
 
     static async registerOAuthUser(email, name, provider, provider_id) {
         return await UserService.registerUser(email, null, name, provider, provider_id);
+    }
+
+    static async googleCallback(code) {
+        // 1. Authorization Code를 Access Token으로 교환
+        const tokens = await OAuthVerifyService.verifyGoogleCode(code);
+
+        // 2. Access Token을 사용하여 사용자 정보 가져오기
+        const userData = await OAuthVerifyService.verifyGoogleToken(tokens.id_token);
+        // userData 예시: { sub: '...', name: '...', given_name: '...', email: '...', ... }
+
+        // 3. 구글 로그인
+        const jwtTokens = await this.googleLogin(userData);
+
+        return jwtTokens;
+    }
+
+    static async appleCallback(code) {
+        // Apple OAuth 콜백 처리 로직 구현
+
     }
 
 
