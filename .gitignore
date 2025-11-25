@@ -51,3 +51,6 @@ server/coverage/
 
 # User uploads
 server/uploads/
+
+# Logs
+nohup.out
