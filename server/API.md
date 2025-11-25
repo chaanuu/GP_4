@@ -187,17 +187,17 @@
 
 ### 4. OAuth 로그인 (`/oauth`)
 
-#### 4.1 POST `/oauth/google`
-- **설명**: Google 로그인 처리
+#### 4.1 POST `/oauth/googleCallback`
+- **설명**: Google 로그인 콜백 URI 
 - **요청**
   - **Body**
     ```json
-    { "idToken": "google-id-token" }
+    { "code": "google-id-secret-code" }
     ```
 - **응답**
   - **200 OK**
     ```json
-    { "message": "Login successful", "user": { "id": 1, "name": "John Doe", "email": "john@example.com" } }
+    { "message": "Login successful", "jwtTokens": { "accessToken": "JWT accessToken", "refreshToken": "JWT refreshToken" } }
     ```
 
 ---

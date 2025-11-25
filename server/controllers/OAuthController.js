@@ -15,7 +15,7 @@ export class OAuthController {
 
         const jwtTokens = await AuthService.googleCallback(code);
 
-        return res.status(200).json({ message: "Google Callback successful", jwtTokens });
+        return res.status(200).json({ message: "Google Login successful", jwtTokens });
     }
 
 
