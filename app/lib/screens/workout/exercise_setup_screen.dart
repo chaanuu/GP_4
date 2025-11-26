@@ -1,84 +1,138 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/workout_program.dart';
 import '../../providers/program_provider.dart';
-import './single_exercise_list_screen.dart';
 
 class ExerciseSetupScreen extends ConsumerStatefulWidget {
   const ExerciseSetupScreen({super.key});
 
   @override
-  ConsumerState<ExerciseSetupScreen> createState() => _ExerciseSetupScreenState();
+  ConsumerState<ExerciseSetupScreen> createState() =>
+      _ExerciseSetupScreenState();
 }
 
 class _ExerciseSetupScreenState extends ConsumerState<ExerciseSetupScreen> {
-  final _setsController = TextEditingController(text: '3');
-  final _repsController = TextEditingController(text: '10');
-  final _weightController = TextEditingController(text: '50.0');
+  late Map<String, dynamic> exercise; // 서버에서 받은 운동 정보
+
+  final TextEditingController weightController = TextEditingController();
+  final TextEditingController setsController = TextEditingController(text: "3");
+  final TextEditingController repsController = TextEditingController(text: "10");
+
+  bool loading = false;
 
   @override
-  void dispose() {
-    _setsController.dispose();
-    _repsController.dispose();
-    _weightController.dispose();
-    super.dispose();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    exercise = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+  }
+
+  Future<void> _saveExercise() async {
+    setState(() => loading = true);
+
+    final api = ref.read(apiServiceProvider);
+
+    final int sets = int.tryParse(setsController.text) ?? 0;
+    final int reps = int.tryParse(repsController.text) ?? 0;
+
+    final success = await api.saveExerciseLog(
+      {
+        "exerciseId": exercise["id"],
+        "sets": sets,
+        "reps": reps,
+        "durationMinutes": 0, // 나중에 수정 가능
+      },
+    );
+
+    setState(() => loading = false);
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("운동이 기록되었습니다.")),
+      );
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("운동 기록에 실패했습니다.")),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // 1. 전달받은 arguments를 Map 형태로 가져옵니다.
-    final arguments = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    final exercise = arguments['exercise'] as Exercise;
-    final isSingleWorkout = arguments['isSingleWorkout'] as bool;
-
-    // 2. 흐름에 따라 버튼 텍스트와 동작을 결정합니다.
-    final String buttonText = isSingleWorkout ? '운동 시작' : '프로그램에 추가';
-    final VoidCallback onPressedAction = isSingleWorkout
-        ? () { // 단일 운동일 때의 동작
-      final workoutData = {
-        'name': exercise.name,
-        'imagePath': exercise.imagePath,
-        'sets': int.tryParse(_setsController.text) ?? 3,
-        'reps': int.tryParse(_repsController.text) ?? 10,
-        'weight': double.tryParse(_weightController.text) ?? 50.0,
-      };
-      Navigator.pushReplacementNamed(context, '/workout_reps', arguments: workoutData);
-    }
-        : () { // 프로그램 만들기일 때의 동작
-      final newExercise = WorkoutExercise(
-        name: exercise.name,
-        imagePath: exercise.imagePath,
-        sets: int.tryParse(_setsController.text) ?? 3,
-        reps: int.tryParse(_repsController.text) ?? 10,
-        weight: double.tryParse(_weightController.text) ?? 50.0,
-      );
-      ref.read(programBuilderProvider.notifier).addExercise(newExercise);
-      Navigator.pop(context);
-    };
+    final String name = exercise["name"] ?? "이름 없음";
+    final String mainMuscle = exercise["mainMuscle"] ?? "-";
+    final String subMuscle = exercise["subMuscle"] ?? "-";
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${exercise.name} 설정'),
+        title: Text(name),
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: ListView(
           children: [
-            _buildInputField(label: '세트', controller: _setsController),
-            const SizedBox(height: 20),
-            _buildInputField(label: '횟수', controller: _repsController),
-            const SizedBox(height: 20),
-            _buildInputField(label: '무게 (kg)', controller: _weightController),
-            const Spacer(),
+            // 운동 기본 정보
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            Text(
+              "주 근육: $mainMuscle",
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            Text(
+              "보조 근육: $subMuscle",
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+
+            const SizedBox(height: 30),
+
+            // 입력 폼
+            _buildNumberField("세트 수", setsController),
+            const SizedBox(height: 16),
+            _buildNumberField("횟수 (reps)", repsController),
+            const SizedBox(height: 16),
+            _buildNumberField("무게 (kg)", weightController),
+
+            const SizedBox(height: 40),
+
             ElevatedButton(
-              onPressed: onPressedAction, // 3. 결정된 동작을 연결합니다.
+              onPressed: () {
+                final int sets = int.tryParse(setsController.text) ?? 0;
+                final int reps = int.tryParse(repsController.text) ?? 0;
+                final double weight = double.tryParse(weightController.text) ?? 0;
+
+                Navigator.pushNamed(
+                  context,
+                  '/workout_reps',
+                  arguments: {
+                    "id": exercise["id"],
+                    "name": exercise["name"],
+                    "sets": sets,
+                    "reps": reps,
+                    "weight": weight,
+                  },
+                );
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
+                backgroundColor: Colors.blue,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: Text(buttonText, style: const TextStyle(fontSize: 18, color: Colors.white)), // 4. 결정된 텍스트를 표시합니다.
+              child: const Text(
+                "운동 시작하기",
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
             ),
           ],
         ),
@@ -86,20 +140,14 @@ class _ExerciseSetupScreenState extends ConsumerState<ExerciseSetupScreen> {
     );
   }
 
-  Widget _buildInputField({
-    required String label,
-    required TextEditingController controller,
-  }) {
+  Widget _buildNumberField(String label, TextEditingController controller) {
     return TextField(
       controller: controller,
+      keyboardType: TextInputType.number,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
+        border: const OutlineInputBorder(),
       ),
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
     );
   }
 }

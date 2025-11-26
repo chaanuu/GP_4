@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Riverpod import
-
-// 분리한 위젯들을 import 합니다.
-// (경로가 다르다면 프로젝트 구조에 맞춰 수정해주세요. 보통은 상대 경로를 추천합니다.)
 import '../../widgets/image_card.dart';
 import '../../widgets/qr_card.dart';
 import '../../providers/nav_provider.dart'; // 네비게이션 상태 관리 provider

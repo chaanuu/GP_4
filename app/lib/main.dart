@@ -31,6 +31,7 @@ import 'screens/workout/exercise_setup_screen.dart';
 import 'screens/workout/program_builder_screen.dart';
 import 'screens/workout/save_program_screen.dart';
 import 'screens/workout/program_detail_screen.dart';
+import 'screens/workout/exercise_setup_program.dart';
 
 import 'screens/body_log/body_log_screen.dart';
 import 'screens/body_log/compare_result_screen.dart';
@@ -40,7 +41,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🔥 한국어 날짜/요일 표시를 위해 필수 (에러 해결)
+  //  한국어 날짜/요일 표시를 위해 필수 (에러 해결)
   await initializeDateFormatting('ko_KR', null);
 
   // 환경 변수 로드 (.env)
@@ -55,7 +56,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Fitness App',
+      title: 'MealFit',
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
         fontFamily: 'Pretendard',
@@ -82,6 +83,10 @@ class MyApp extends StatelessWidget {
         '/compare_result': (context) => const CompareResultScreen(),
         '/personal_info': (context) => const PersonalInfoScreen(),
         '/preferences': (context) => const PreferencesScreen(),
+        '/exercise_setup_program': (context) => ExerciseSetupProgramScreen(),
+        '/workout_hub' : (context) => WorkoutHubScreen(),
+        '/muscle_status': (context) => const MuscleConditionScreen(),
+
       },
     );
   }

@@ -1,107 +1,197 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/program_provider.dart'; // apiServiceProvider
-import '../../models/workout_program.dart'; // WorkoutExercise 모델
+import '../../providers/program_provider.dart';
 
-// ✅ API 호출을 위해 ConsumerWidget으로 변경
-class WorkoutRepsScreen extends ConsumerWidget {
+class WorkoutRepsScreen extends ConsumerStatefulWidget {
   const WorkoutRepsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // 이전 화면에서 전달받은 데이터
-    final arguments = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+  ConsumerState<WorkoutRepsScreen> createState() =>
+      _WorkoutRepsScreenState();
+}
 
-    final String exerciseName = arguments?['name'] ?? '운동 이름 없음';
-    final String? imagePath = arguments?['imagePath'];
-    final int sets = arguments?['sets'] ?? 3;
-    final int reps = arguments?['reps'] ?? 10;
-    final double weight = arguments?['weight'] ?? 50.0;
+class _WorkoutRepsScreenState extends ConsumerState<WorkoutRepsScreen> {
+  late Map<String, dynamic> exercise;
+
+  Timer? _timer;
+  int _seconds = 0;
+  bool _isRunning = false;
+
+  DateTime? _startTime;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    exercise = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+  }
+
+  void _startTimer() {
+    if (_isRunning) return;
+
+    _startTime = DateTime.now();
+    _isRunning = true;
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() => _seconds++);
+    });
+  }
+
+  void _stopTimer() {
+    _timer?.cancel();
+    _isRunning = false;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _finishWorkout() async {
+    _stopTimer();
+
+    final now = DateTime.now();
+
+    final logData = {
+      "exerciseId": exercise["id"],
+      "sets": exercise["sets"] ?? 1,
+      "reps": exercise["reps"] ?? 10,
+      "durationMinutes": (_seconds / 60).ceil(),
+      "dateExecuted": now.toIso8601String().split('T').first,
+      "timeExecuted": now.toIso8601String(),
+    };
+
+    final api = ref.read(apiServiceProvider);
+    final success = await api.saveExerciseLog(logData);
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("운동 기록이 저장되었습니다!")),
+      );
+      Navigator.pop(context);
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("운동 저장 실패하였습니다.")),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String name = exercise["name"] ?? "운동";
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        title: Text(name, style: const TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
-      // 화면 전체를 차지하도록 설정 (중앙 정렬을 위해)
-      body: SizedBox.expand(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // 운동 이미지 (없으면 기본 아이콘)
-            if (imagePath != null)
-              Image.asset(imagePath, height: 120, width: 120)
-            else
-              const Icon(Icons.fitness_center, size: 120),
 
-            const SizedBox(height: 32),
+      /// -------------------------------
+      /// 🔥 내용 전체를 정가운데 배치
+      /// -------------------------------
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
 
-            const Text('운동 진행중', style: TextStyle(fontSize: 18, color: Colors.grey)),
-            Text(exerciseName, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,     // 화면 전체 차지 ❌ → 진짜 가운데 정렬됨
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
 
-            const SizedBox(height: 48),
-
-            // 세트 정보 표시
-            for (int i = 1; i <= sets; i++)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text('$i세트 - $reps회, ${weight}kg', style: const TextStyle(fontSize: 24)),
-              ),
-
-            const Spacer(),
-
-            //  운동 완료 및 서버 전송 버튼
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: ElevatedButton(
-                onPressed: () async {
-                  // 1. 저장할 운동 데이터 객체 생성
-                  final exerciseLog = WorkoutExercise(
-                    name: exerciseName,
-                    imagePath: imagePath ?? '',
-                    sets: sets,
-                    reps: reps,
-                    weight: weight,
-                  );
-
-                  // 2. ApiService를 통해 서버에 전송 (ExerciseLog 저장)
-                  // (날짜는 현재 시간 기준)
-                  final success = await ref.read(apiServiceProvider).saveExerciseLog(
-                      exerciseLog,
-                      DateTime.now()
-                  );
-
-                  // 3. 결과 처리
-                  if (context.mounted) {
-                    if (success) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('운동 기록이 서버에 저장되었습니다! ')),
-                      );
-                      Navigator.pop(context); // 목록으로 돌아가기
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('기록 저장 실패 (서버 연결 확인 필요)')),
-                      );
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              /// 🔥 운동 이미지 (픽토그램)
+              SizedBox(
+                height: 120,
+                child: Image.asset(
+                  'assets/images/squat.png', // 원하는 PNG로 교체 가능
+                  fit: BoxFit.contain,
                 ),
-                child: const Text('운동 완료', style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
+
+              const SizedBox(height: 20),
+
+              /// 🔥 운동 이름
+              Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              /// 🔥 세트 & 횟수
+              Text(
+                "세트: ${exercise["sets"] ?? '-'}   |   횟수: ${exercise["reps"] ?? '-'}",
+                style: const TextStyle(fontSize: 18, color: Colors.black54),
+              ),
+
+              const SizedBox(height: 35),
+
+              /// 🔥 타이머
+              Text(
+                _formatTime(_seconds),
+                style: const TextStyle(
+                  fontSize: 46,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              /// 🔥 운동 시작 버튼
+              SizedBox(
+                width: 200,
+                child: ElevatedButton(
+                  onPressed: _startTimer,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text("운동 시작", style: TextStyle(color: Colors.white)),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              /// 🔥 운동 완료 버튼
+              SizedBox(
+                width: 200,
+                child: ElevatedButton(
+                  onPressed: _finishWorkout,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text("운동 완료", style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  String _formatTime(int seconds) {
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return "$minutes:$secs";
+  }
 }
+
+
+
+
