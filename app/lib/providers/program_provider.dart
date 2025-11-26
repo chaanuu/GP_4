@@ -31,8 +31,9 @@ final programBuilderProvider = StateNotifierProvider<ProgramBuilderNotifier, Pro
 // ApiService 인스턴스를 제공하는 Provider
 final apiServiceProvider = Provider<ApiService>((ref) => ApiService());
 
-// 프로그램 목록을 비동기적으로 가져오는 FutureProvider
-final programsProvider = FutureProvider<List<WorkoutProgram>>((ref) async {
-  // apiServiceProvider를 통해 ApiService의 getPrograms 함수를 호출
-  return ref.watch(apiServiceProvider).getPrograms();
+// 서버에서 프로그램 목록을 가져오는 FutureProvider
+final programsProvider = FutureProvider<List<dynamic>>((ref) async {
+  final api = ref.read(apiServiceProvider);
+  //  우리가 ApiService에 만든 서버용 메서드
+  return await api.getProgramList();
 });

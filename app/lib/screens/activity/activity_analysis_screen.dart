@@ -301,7 +301,6 @@ class _ActivityAnalysisScreenState extends ConsumerState<ActivityAnalysisScreen>
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () {
             ref.read(navIndexProvider.notifier).state = -1;
-            Navigator.pop(context);
           },
         ),
       ),
