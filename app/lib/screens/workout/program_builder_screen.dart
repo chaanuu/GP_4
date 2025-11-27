@@ -1,103 +1,145 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/program_provider.dart';
-import './single_exercise_list_screen.dart';
 
-class ProgramBuilderScreen extends ConsumerWidget {
+class ProgramBuilderScreen extends ConsumerStatefulWidget {
   const ProgramBuilderScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final programState = ref.watch(programBuilderProvider);
+  ConsumerState<ProgramBuilderScreen> createState() =>
+      _ProgramBuilderScreenState();
+}
 
-    final List<Exercise> availableExercises = [
-      Exercise(name: '데드리프트', imagePath: 'assets/images/deadlift.png'),
-      Exercise(name: '스쿼트', imagePath: 'assets/images/squat.png'),
-      Exercise(name: '벤치프레스', imagePath: 'assets/images/bench_press.png'),
-      Exercise(name: '숄더프레스', imagePath: 'assets/images/shoulder_press.png'),
-    ];
+class _ProgramBuilderScreenState
+    extends ConsumerState<ProgramBuilderScreen> {
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('프로그램에 운동 추가'),
+  List<Map<String, dynamic>> selectedExercises = [];
+
+  void _addExercise(Map<String, dynamic> exercise) {
+    setState(() {
+      selectedExercises.add({
+        "exerciseId": exercise["id"],
+        "name": exercise["name"],
+        "sets": exercise["sets"],
+        "reps": exercise["reps"],
+        "weight": exercise["weight"],
+      });
+    });
+  }
+
+  void _openExercisePicker() {
+    Navigator.pushNamed(
+      context,
+      '/single_exercise_list',
+      arguments: {"mode": "program"},
+    ).then((result) {
+      if (result is Map<String, dynamic>) {
+        _addExercise(result);
+      }
+    });
+  }
+
+  void _editExercise(int index) {
+    final item = selectedExercises[index];
+
+    TextEditingController setCtrl =
+    TextEditingController(text: item["sets"].toString());
+    TextEditingController repCtrl =
+    TextEditingController(text: item["reps"].toString());
+    TextEditingController weightCtrl =
+    TextEditingController(text: item["weight"].toString());
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text("${item["name"]} 설정"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: setCtrl,
+              decoration: const InputDecoration(labelText: "세트 수"),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: repCtrl,
+              decoration: const InputDecoration(labelText: "횟수"),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: weightCtrl,
+              decoration: const InputDecoration(labelText: "무게 (kg)"),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
         actions: [
           TextButton(
-            onPressed: programState.exercises.isNotEmpty
-                ? () async {
-              final result = await Navigator.pushNamed(context, '/save_program');
-              if (result != null && context.mounted) {
-                Navigator.of(context).pop(result);
-              }
-            }
-                : null,
-            child: const Text('완료'),
+            onPressed: () {
+              setState(() {
+                selectedExercises[index]["sets"] =
+                    int.tryParse(setCtrl.text) ?? 3;
+                selectedExercises[index]["reps"] =
+                    int.tryParse(repCtrl.text) ?? 10;
+                selectedExercises[index]["weight"] =
+                    double.tryParse(weightCtrl.text) ?? 0.0;
+              });
+              Navigator.pop(context);
+            },
+            child: const Text("확인"),
           )
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(16.0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16.0,
-                mainAxisSpacing: 16.0,
-              ),
-              itemCount: availableExercises.length,
-              itemBuilder: (context, index) {
-                final exercise = availableExercises[index];
-                return GestureDetector(
-                  onTap: () {
-                    //  수정됨: Map 형식으로 데이터 포장
-                    final arguments = {
-                      'exercise': exercise,
-                      'isSingleWorkout': false, // 프로그램 추가임을 표시
-                    };
-                    Navigator.pushNamed(context, '/exercise_setup', arguments: arguments);
-                  },
-                  child: Card(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(exercise.imagePath, height: 60),
-                        const SizedBox(height: 8),
-                        Text(exercise.name),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          if (programState.exercises.isNotEmpty)
-            Container(
-              height: 200,
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('추가된 운동', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const Divider(),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: programState.exercises.length,
-                      itemBuilder: (context, index) {
-                        final addedExercise = programState.exercises[index];
-                        return ListTile(
-                          dense: true,
-                          leading: Image.asset(addedExercise.imagePath, width: 30),
-                          title: Text(addedExercise.name),
-                          subtitle: Text('${addedExercise.sets}세트 x ${addedExercise.reps}회, ${addedExercise.weight}kg'),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );
   }
+
+  void _goToSaveScreen() {
+    Navigator.pushNamed(context, '/save_program',
+        arguments: selectedExercises);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("프로그램 구성"),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          if (selectedExercises.isNotEmpty)
+            TextButton(
+              onPressed: _goToSaveScreen,
+              child: const Text(
+                "다음",
+                style: TextStyle(color: Colors.black),
+              ),
+            ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openExercisePicker,
+        backgroundColor: Colors.black,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: selectedExercises.isEmpty
+          ? const Center(child: Text("운동을 추가해보세요."))
+          : ListView.builder(
+        itemCount: selectedExercises.length,
+        itemBuilder: (_, i) {
+          final item = selectedExercises[i];
+          return ListTile(
+            title: Text(item["name"]),
+            subtitle: Text(
+              "${item["sets"]}세트 · ${item["reps"]}회 · ${item["weight"]}kg",
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () => _editExercise(i),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
+

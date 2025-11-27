@@ -1,49 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/workout_program.dart';
 import '../../providers/program_provider.dart';
+import '../../providers/nav_provider.dart';
 
-// StatefulWidget을 ConsumerWidget으로 변경
 class WorkoutProgramScreen extends ConsumerWidget {
   const WorkoutProgramScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. FutureProvider를 watch하여 데이터의 상태(loading, data, error)를 감시
     final programsAsyncValue = ref.watch(programsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.black), onPressed: () => Navigator.of(context).pop()),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text('나의 운동 프로그램'),
       ),
       body: Column(
         children: [
           Expanded(
-            // 2. when을 사용하여 상태에 따라 다른 UI를 보여줌
             child: programsAsyncValue.when(
-              // 로딩 중일 때
               loading: () => const Center(child: CircularProgressIndicator()),
-              // 에러 발생 시
-              error: (err, stack) => Center(child: Text('에러 발생: $err')),
-              // 데이터 로딩 성공 시
+              error: (err, _) => Center(child: Text('에러 발생: $err')),
               data: (programs) {
-                return programs.isEmpty
-                    ? const Center(child: Text('저장된 프로그램이 없습니다.\n새로운 프로그램을 만들어보세요!'))
-                    : ListView.builder(
+                if (programs.isEmpty) {
+                  return const Center(
+                    child: Text("저장된 프로그램이 없습니다.\n새로운 프로그램을 만들어보세요!"),
+                  );
+                }
+
+                return ListView.builder(
                   padding: const EdgeInsets.all(16.0),
                   itemCount: programs.length,
                   itemBuilder: (context, index) {
-                    final program = programs[index];
+                    final program = programs[index] as Map<String, dynamic>;
+
+                    final title = program['title'] ?? '이름 없는 프로그램';
+                    final createdAt = program['createdAt']?.toString() ?? '';
+
                     return Card(
-                      margin: const EdgeInsets.only(bottom: 16.0),
+                      margin: const EdgeInsets.only(bottom: 16),
                       child: ListTile(
-                        title: Text(program.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('${program.exercises.length}개의 운동'),
-                        trailing: Text(program.date),
+                        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(createdAt),
                         onTap: () {
-                          Navigator.pushNamed(context, '/program_detail', arguments: program);
+                          Navigator.pushNamed(
+                            context,
+                            '/program_detail',
+                            arguments: program['id'],
+                          );
                         },
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (value) {
+                            if (value == 'edit') {
+                              _editProgram(context, program);
+                            } else if (value == 'delete') {
+                              _deleteProgram(context, ref, program['id']);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Text('수정'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text('삭제'),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -51,30 +78,77 @@ class WorkoutProgramScreen extends ConsumerWidget {
               },
             ),
           ),
+
+          // 하단 프로그램 추가 버튼
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: ElevatedButton(
                 onPressed: () async {
-                  final newProgram = await Navigator.pushNamed(context, '/program_builder');
-                  if (newProgram != null && newProgram is WorkoutProgram) {
-                    // 3. ApiService를 통해 서버에 데이터 생성 요청
-                    await ref.read(apiServiceProvider).createProgram(newProgram);
-                    // 4. 데이터 생성이 성공하면, 목록을 새로고침하도록 provider를 무효화
-                    ref.invalidate(programsProvider);
-                  }
+                  await Navigator.pushNamed(context, '/program_builder');
+                  ref.invalidate(programsProvider); // 새로고침
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('나의 운동프로그램 만들기', style: TextStyle(fontSize: 16)),
+                child: const Text("나의 운동프로그램 만들기"),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  // 🔧 프로그램 수정
+  void _editProgram(BuildContext context, Map<String, dynamic> program) {
+    Navigator.pushNamed(
+      context,
+      '/program_builder',
+      arguments: {
+        "mode": "edit",
+        "program": program,
+      },
+    );
+  }
+
+  // ❌ 프로그램 삭제
+  Future<void> _deleteProgram(BuildContext context, WidgetRef ref, int programId) async {
+    final api = ref.read(apiServiceProvider);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("프로그램 삭제"),
+        content: const Text("정말 삭제하시겠습니까?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("취소"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("삭제", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final success = await api.deleteProgram(programId);
+
+    if (success) {
+      ref.invalidate(programsProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("프로그램이 삭제되었습니다.")),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("삭제에 실패했습니다.")),
+      );
+    }
   }
 }

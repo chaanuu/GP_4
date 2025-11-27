@@ -9,24 +9,92 @@ class ApiService {
   static const String _tokenKey = 'auth_token';
   static const String _userIdKey = 'user_id';
 
-  // 운동 프로그램은 앱 내부에서만 관리 (가짜 DB)
-  // 백엔드에는 '프로그램' 자체를 저장하는 API가 없으므로 앱 내부에 저장합니다.
-  final List<WorkoutProgram> _fakeDatabase = [];
+  Future<int?> createProgram(Map<String, dynamic> programData) async {
+    try {
+      final token = await _getToken();
+      final userId = await _getUserId(); // ⭐ 여기서 userId 가져오기
 
-  // ------------------------------------------------------------------------
-  // 운동 프로그램 (Local - 앱 내부 관리)
-  // ------------------------------------------------------------------------
+      if (userId == null) {
+        print("User ID is NULL — 로그인 상태를 확인하세요.");
+        return null;
+      }
 
-  Future<List<WorkoutProgram>> getPrograms() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _fakeDatabase;
+      // **반드시 userId 추가**
+      programData["userId"] = userId;
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/program'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(programData),
+      );
+
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body)['programId'];
+      }
+      return null;
+    } catch (e) {
+      print("Program create error: $e");
+      return null;
+    }
   }
 
-  Future<WorkoutProgram> createProgram(WorkoutProgram program) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    _fakeDatabase.add(program);
-    return program;
+  Future<List<dynamic>> getProgramList() async {
+    final userId = await _getUserId();
+    final token = await _getToken();
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/program/user/$userId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    return jsonDecode(response.body);
   }
+
+  Future<Map<String, dynamic>?> getProgramDetail(int programId) async {
+    try {
+      final token = await _getToken();
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/api/program/$programId'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      print("프로그램 상세 오류: $e");
+    }
+    return null;
+  }
+
+  Future<bool> deleteProgram(int programId) async {
+    try {
+      final token = await _getToken();
+
+      final res = await http.delete(
+        Uri.parse('$_baseUrl/api/program/$programId'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      return res.statusCode == 204;
+    } catch (e) {
+      print("프로그램 삭제 오류: $e");
+      return false;
+    }
+  }
+
 
   // ------------------------------------------------------------------------
   // 인증 (Auth) - 경로: /auth/...
@@ -191,39 +259,31 @@ class ApiService {
     return null;
   }
 
-  // 운동 수행 기록 저장
-  Future<bool> saveExerciseLog(WorkoutExercise exercise, DateTime date) async {
+  Future<bool> saveExerciseLog(Map<String, dynamic> logData) async {
     try {
       final token = await _getToken();
       final userId = await _getUserId();
+
       if (userId == null) return false;
 
-      final body = {
-        'userId': userId,
-        // TODO: 현재는 임시 ID(1)를 보냅니다. 나중에 운동 이름으로 ID를 찾는 로직이 필요
-        'exerciseId': 1,
-        'reps': exercise.reps,
-        'sets': exercise.sets,
-        'dateExecuted': date.toIso8601String(),
-        'durationMinutes': 0, // 필요시 추가
-        'caloriesBurned': 0,  // 필요시 추가
-      };
+      logData["userId"] = userId;
 
-      // 경로: app.js -> /api/exercise/log
       final response = await http.post(
         Uri.parse('$_baseUrl/api/exercise/log'),
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
         },
-        body: jsonEncode(body),
+        body: jsonEncode(logData),
       );
+
       return response.statusCode == 201;
     } catch (e) {
-      print('운동 기록 저장 에러: $e');
+      print("운동 기록 저장 에러: $e");
       return false;
     }
   }
+
 
   // ------------------------------------------------------------------------
   // 유틸리티
@@ -289,4 +349,101 @@ class ApiService {
       return null;
     }
   }
+
+  // 운동 목록 불러오기 (정적 + 유저 운동 모두)
+  Future<List<Map<String, dynamic>>> getAllExercises() async {
+    try {
+      final token = await _getToken();
+      final userId = await _getUserId();
+
+      final headers = {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+
+      // 1) 정적 운동
+      final staticRes = await http.get(
+        Uri.parse('$_baseUrl/api/exercise/static'),
+        headers: headers,
+      );
+
+      // 2) 유저가 만든 운동
+      final userRes = await http.get(
+        Uri.parse('$_baseUrl/api/exercise/user/$userId'),
+        headers: headers,
+      );
+
+      if (staticRes.statusCode == 200 && userRes.statusCode == 200) {
+        final List<dynamic> staticList = jsonDecode(staticRes.body);
+        final List<dynamic> userList = jsonDecode(userRes.body);
+
+        // 두 목록 병합
+        return [...staticList, ...userList];
+      }
+
+      return [];
+    } catch (e) {
+      print('운동 목록 로드 에러: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> getExerciseByCode(String code) async {
+    try {
+      final token = await _getToken();
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/api/exercise/code/$code'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+
+      return null;
+    } catch (e) {
+      print("QR 운동 조회 에러: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getWeeklyMuscleTiredness() async {
+    try {
+      final token = await _getToken();
+      final userId = await _getUserId();
+      if (userId == null) return null;
+
+      final now = DateTime.now();
+      final endDate = now.toIso8601String().split('T').first;
+      final startDate =
+          now.subtract(const Duration(days: 6)).toIso8601String().split('T').first;
+
+      final response = await http.get(
+        Uri.parse(
+            '$_baseUrl/api/exercise/log/user/$userId/muscles/summary?startDate=$startDate&endDate=$endDate'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        print(
+            '근육 피로도 응답 코드: ${response.statusCode}, body: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('근육 피로도 불러오기 에러: $e');
+      return null;
+    }
+  }
+
+
 }
+

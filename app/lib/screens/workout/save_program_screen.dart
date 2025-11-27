@@ -1,66 +1,103 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import '../../models/workout_program.dart';
 import '../../providers/program_provider.dart';
+import '../../providers/nav_provider.dart';
 
 class SaveProgramScreen extends ConsumerStatefulWidget {
   const SaveProgramScreen({super.key});
 
   @override
-  ConsumerState<SaveProgramScreen> createState() => _SaveProgramScreenState();
+  ConsumerState<SaveProgramScreen> createState() =>
+      _SaveProgramScreenState();
 }
 
 class _SaveProgramScreenState extends ConsumerState<SaveProgramScreen> {
-  final _titleController = TextEditingController();
+  final TextEditingController _titleCtrl = TextEditingController();
+  List<Map<String, dynamic>> _items = [];
+
+  bool _saving = false;
 
   @override
-  void dispose() {
-    _titleController.dispose();
-    super.dispose();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _items = (ModalRoute.of(context)!.settings.arguments
+    as List<Map<String, dynamic>>);
+  }
+
+  Future<void> _saveProgram() async {
+    if (_titleCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("프로그램 이름을 입력해주세요.")),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+
+    final api = ref.read(apiServiceProvider);
+
+    final programData = {
+      "title": _titleCtrl.text.trim(),
+      "items": _items,
+      // userId는 ApiService에서 자동으로 붙도록 설계함
+    };
+
+    final programId = await api.createProgram(programData);
+
+    setState(() => _saving = false);
+
+    if (!mounted) return;
+
+    if (programId != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("프로그램이 저장되었습니다!")),
+      );
+
+      // 운동 탭(3)으로 이동
+      ref.read(navIndexProvider.notifier).state = 3;
+
+      // 메인 화면으로 돌아가기
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("저장에 실패했습니다.")),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('프로그램 저장'),
+        title: const Text("프로그램 저장"),
+        backgroundColor: Colors.white,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
-              controller: _titleController,
+              controller: _titleCtrl,
               decoration: const InputDecoration(
-                labelText: '프로그램 제목',
-                hintText: '예: 3대 운동 루틴',
+                labelText: "프로그램 이름",
                 border: OutlineInputBorder(),
               ),
             ),
-            const Spacer(),
-            ElevatedButton(
-              onPressed: () {
-                // 1. 현재 추가된 운동 목록을 provider에서 가져오기
-                final exercises = ref.read(programBuilderProvider).exercises;
-                // 2. 최종 WorkoutProgram 객체 생성
-                final newProgram = WorkoutProgram(
-                  title: _titleController.text.isNotEmpty ? _titleController.text : '이름 없는 프로그램',
-                  date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
-                  exercises: exercises,
-                );
-                // 3. provider 상태 초기화
-                ref.read(programBuilderProvider.notifier).clear();
+            const SizedBox(height: 30),
 
-                // 4. ✅ 현재 화면만 닫고, 이전 화면으로 newProgram을 전달합니다.
-                Navigator.of(context).pop(newProgram);
-              },
+            _saving
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+              onPressed: _saveProgram,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                    vertical: 14, horizontal: 30),
               ),
-              child: const Text('저장하기', style: TextStyle(fontSize: 18, color: Colors.white)),
+              child: const Text(
+                "저장하기",
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
