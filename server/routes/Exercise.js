@@ -2,7 +2,10 @@ import { ExerciseController } from '../controllers/Exercise/ExerciseController.j
 import express from 'express';
 const router = express.Router();
 
-router.get('/user/:uid', ExerciseController.getAllExercisesByUserId);
+router.get('/static', ExerciseController.getAllStaticExercises);
+router.get('/code/:code', ExerciseController.getExerciseByCode);
+router.get('/user/:userId', ExerciseController.getAllExercisesByUserId);
+
 router.post('/', ExerciseController.createExercise);
 router.delete('/:id', ExerciseController.deleteExercise);
 router.put('/:id', ExerciseController.updateExercise);
