@@ -3,28 +3,45 @@ import { db } from '../../utils/DB.js';
 import { DuplicateEntryError, NotFoundError } from '../../utils/errors.js';
 
 export class ExerciseLog {
-    constructor({ userId, exerciseId, reps, sets, timeExecuted, durationMinutes, caloriesBurned }) {
-        this.id = null; // DB에 저장되면 설정됨
+    constructor({ 
+        id,
+        userId, 
+        exerciseId, 
+        reps, 
+        sets, 
+        dateExecuted,
+        timeExecuted, 
+        durationMinutes, 
+        caloriesBurned 
+    }) {
+
+        this.id = id ?? null;
         this.userId = userId;
         this.exerciseId = exerciseId;
-        this.reps = reps; // 반복 횟수
-        this.sets = sets; // 세트 수
-        this.timeExecuted = timeExecuted; // 운동 수행 시각
-        this.durationMinutes = durationMinutes; // 운동 지속 시간 (분)
-        this.caloriesBurned = caloriesBurned; // 소모 칼로리
+        this.reps = reps;
+        this.sets = sets;
+
+        // DATE 컬럼
+        this.dateExecuted = dateExecuted
+            ? new Date(dateExecuted)
+            : new Date();
+
+        // DATETIME 컬럼
+        this.timeExecuted = timeExecuted
+            ? new Date(timeExecuted)
+            : new Date();
+
+        this.durationMinutes = durationMinutes ?? 0;
+        this.caloriesBurned = caloriesBurned ?? 0;
     }
 
-    /**
-     * 
-     * @returns  {Promise<ExerciseLog>} 저장된 ExerciseLog 객체 반환
-     * 
-     */
     async save() {
         const data = {
             userId: this.userId,
             exerciseId: this.exerciseId,
             reps: this.reps,
             sets: this.sets,
+            dateExecuted: this.dateExecuted,
             timeExecuted: this.timeExecuted,
             durationMinutes: this.durationMinutes,
             caloriesBurned: this.caloriesBurned
@@ -32,29 +49,23 @@ export class ExerciseLog {
 
         try {
             if (this.id) {
-                // ID가 있으면 UPDATE
                 const result = await db.update('exercise_logs', data, { id: this.id });
                 if (result.affectedRows === 0) {
-                    // 업데이트할 대상이 없음 (존재하지 않는 ID)
                     throw new NotFoundError('ExerciseLog not found during update');
                 }
             } else {
-                // ID가 없으면 INSERT
                 const result = await db.create('exercise_logs', data);
                 this.id = result.insertId;
             }
             return this;
 
         } catch (error) {
-            // DB 에러가 "중복 키" 에러일 경우, 애플리케이션 에러로 변환
             if (error.code === 'ER_DUP_ENTRY') {
                 throw new DuplicateEntryError('This exercise log entry already exists.');
             }
-            // 그 외 DB 에러는 그대로 상위로 전파
             throw error;
         }
     }
-
 
     static async getById(id) {
         const rows = await db.read('exercise_logs', { id: id });
@@ -146,49 +157,47 @@ export class ExerciseLog {
     }
 
     static async calculateTotalTirednessOfUsedMuscles(userId, startDate, endDate, muscles) {
-        if (!muscles || muscles.length === 0) {
-            return {};
-        }
+    if (!muscles || muscles.length === 0) return {};
 
-        const start = new Date(startDate);
-        start.setHours(0, 0, 0, 0);
+    const placeholders = muscles.map(() => '?').join(',');
 
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
+    const query = `
+        SELECT
+            muscle,
+            SUM(tiredness) AS totalTiredness
+        FROM (
+            SELECT mainMuscle AS muscle, 2 AS tiredness
+            FROM exercise_logs el
+            JOIN exercises e ON el.exerciseId = e.id
+            WHERE el.userId = ? AND el.timeExecuted BETWEEN ? AND ?
 
-        const query = `
-            SELECT 
-                muscle,
-                SUM(tiredness) AS totalTiredness
-            FROM (
-                SELECT mainMuscle AS muscle, 2 AS tiredness
-                FROM exercise_logs el
-                JOIN exercises e ON el.exerciseId = e.id
-                WHERE el.userId = ? AND el.timeExecuted BETWEEN ? AND ?
-                
-                UNION ALL
-                
-                SELECT subMuscle AS muscle, 1 AS tiredness
-                FROM exercise_logs el
-                JOIN exercises e ON el.exerciseId = e.id
-                WHERE el.userId = ? AND el.timeExecuted BETWEEN ? AND ?
-            ) AS muscle_tiredness
-            WHERE muscle IN (?)
-            GROUP BY muscle;
-        `;
+            UNION ALL
 
-        const params = [userId, start, end, userId, start, end, muscles];
-        const rows = await db.query(query, params);
+            SELECT subMuscle AS muscle, 1 AS tiredness
+            FROM exercise_logs el
+            JOIN exercises e ON el.exerciseId = e.id
+            WHERE el.userId = ? AND el.timeExecuted BETWEEN ? AND ?
+        ) AS muscle_tiredness
+        WHERE muscle IN (${placeholders})
+        GROUP BY muscle;
+    `;
 
-        const muscleWeights = {};
-        for (const muscle of muscles) {
-            muscleWeights[muscle] = 0;
-        }
+    const params = [
+        userId, startDate, endDate,
+        userId, startDate, endDate,
+        ...muscles
+    ];
 
-        for (const row of rows) {
-            muscleWeights[row.muscle] = row.totalTiredness;
-        }
+    const rows = await db.query(query, params);
 
-        return muscleWeights;
+    const result = {};
+    muscles.forEach(m => (result[m] = 0));
+
+    for (const row of rows) {
+        result[row.muscle] = row.totalTiredness;
     }
+
+    return result;
+}
+
 }

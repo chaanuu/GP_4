@@ -3,8 +3,8 @@ import { db } from '../../utils/DB.js';
 import { DuplicateEntryError, NotFoundError } from '../../utils/errors.js';
 
 export class Exercise {
-    constructor({ userId, name, mets, code, mainMuscle, subMuscle, dateExecuted }) {
-        this.id = null; // DB에 저장되면 설정됨
+    constructor({ id, userId, name, mets, code, mainMuscle, subMuscle, dateExecuted }) {
+        this.id = id ?? null; // DB에 저장되면 설정됨
         this.userId = userId; // null이면 기본구성, 값이 있으면 유저귀속
         this.name = name;
         this.mets = mets;
@@ -74,9 +74,11 @@ export class Exercise {
 
     // 기본구성 전체
     static async getAllStatic() {
-        const rows = await db.read('exercises', { userId: null });
-        return rows.map(row => new Exercise(row));
+    	const sql = `SELECT * FROM exercises WHERE userId IS NULL`;
+    	const rows = await db.query(sql);
+    	return rows.map(row => new Exercise(row));
     }
+
 
     // 유저 귀속 운동 전체
     static async getAllByUserId(userId) {

@@ -38,7 +38,7 @@ export class User {
     }
 
     /**
-     * 
+     *
      * @returns {Promise<User>} 저장된 User 객체 반환
      */
     async save() {
@@ -48,6 +48,10 @@ export class User {
             password_hash: this.password_hash,
             provider: this.provider,
             provider_id: this.provider_id,
+            height: this.height,
+            weight: this.weight,
+            age: this.age,
+            gender: this.gender,
             // inbodys: JSON.stringify(this.inbodys),
             // nutrition: JSON.stringify(this.nutrition),
         };

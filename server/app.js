@@ -29,7 +29,7 @@ import { exerciseLogRouter } from './routes/ExerciseLog.js';
 import { mealLogRouter } from './routes/MealLog.js';
 import { authRouter } from './routes/Auth.js';
 import { OAuthRouter } from './routes/OAuth.js';
-
+import { programRouter } from './routes/Program.js';
 
 const port = config.port || 3000;
 
@@ -41,6 +41,7 @@ router.use('/exercise', exerciseRouter);
 router.use('/food', foodRouter);
 router.use('/exercise/log', exerciseLogRouter);
 router.use('/meal/log', mealLogRouter);
+router.use('/program', programRouter);
 
 // Logger
 app.use(morgan('dev'));

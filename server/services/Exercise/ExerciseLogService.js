@@ -75,9 +75,20 @@ export class ExerciseLogService {
         return await ExerciseLog.calculateTotalCaloriesBurned(userId, startDate, endDate);
     }
 
-    static async getTotalTirednessOfUsedMuscles(userId, startDate, endDate, muscle) {
-        return await ExerciseLog.calculateTotalTirednessOfUsedMuscles(userId, startDate, endDate, muscle);
-    }
+    // ExerciseLogService.js
+
+static async getTotalTirednessOfUsedMuscles(userId, start, end, muscles) {
+  const result = await ExerciseLog.calculateTotalTirednessOfUsedMuscles(
+    userId,
+    start,
+    end,
+    muscles
+  );
+
+  // result 예시: { chest: 4 }
+  return result;
+}
+
 
 
 
