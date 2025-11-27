@@ -4,8 +4,14 @@ import { ValidationError } from '../utils/errors.js'
 export class OAuthController {
     static async googleLogin(req, res) {
         const { idToken } = req.body;
-        const newTokens = await AuthService.googleLogin(idToken);
-        return res.status(200).json({ message: "Google Login successful", newTokens });
+        const tokens = await AuthService.googleLogin(idToken);
+
+        return res.status(200).json({
+            message: "Google Login successful",
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            userId: tokens.userId
+        });
     }
 
     static async googleCallback(req, res) {

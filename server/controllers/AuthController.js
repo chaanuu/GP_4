@@ -9,28 +9,37 @@ import { AuthService } from '../services/Auth/AuthService.js';
 
 export class AuthController {
     static async login(req, res) {
-        const { email } = req.body;
+    try {
+        const { email, password } = req.body;
 
-        // TODO: 실제 검증 로직 추가해서 미들웨어로 분리할 것
-        if (!email) {
-            return res.status(400).json({ message: 'email is required' });
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required' });
         }
 
+        // 이메일로 사용자 조회
         const user = await UserService.getUserByEmail(email);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
+        // 비밀번호 검증
+        const isPasswordValid = await UserService.comparePassword(password, user.password_hash);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid password' });
+        }
 
         const userId = user.id;
 
-        // JWT 토큰 생성
-        const token = JwtService.generateTokens({ userId });
+        // 정상 토큰 생성
+        const tokens = await JwtService.generateTokens(userId);
 
-        // 응답으로 토큰 반환
-        return res.status(200).json({ token });
+        return res.status(200).json({ token: tokens });
 
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: error.message || 'Internal server error' });
     }
+}
 
     static async logout(req, res) {
         const refreshToken = req.cookies.refreshToken;
@@ -40,21 +49,33 @@ export class AuthController {
 
     }
 
-    static registerUser(req, res) {
-        const { email, password, name } = req.body;
+    static async registerUser(req, res) {
+    	try {
+        	const { email, password, name } = req.body;
 
-        // TODO : 미들웨어로 뺄 것
-        if (!email || !password) {
-            return res.status(400).json({ message: 'Email and password are required' });
-        }
-        if (UserService.getUserByEmail(email)) {
-            return res.status(400).json({ message: 'Email already in use' });
-        }
+        	if (!email || !password) {
+            		return res.status(400).json({ message: 'Email and password are required' });
+        	}
 
+        	// 이메일 중복 체크 (await 필수)
+        	const existingUser = await UserService.getUserByEmail(email).catch(() => null);
+        	if (existingUser) {
+            		return res.status(400).json({ message: 'Email already in use' });
+        	}
 
-        const newUser = UserService.registerUser(email, password, name);
-        return res.status(201).json({ message: 'User registered successfully', user: newUser });
-    }
+        	// 사용자 생성 (await 필수)
+        	const newUser = await UserService.registerUser(email, password, name);
+
+        	return res.status(201).json({
+            		message: 'User registered successfully',
+            		user: newUser,
+        	});
+
+    	} catch (error) {
+        	console.error(error);
+        	return res.status(500).json({ message: 'Internal server error' });
+    	}
+}
 
 
 

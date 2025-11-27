@@ -12,11 +12,11 @@ export class JwtService {
     static REFRESH_TTL = 30 * 24 * 60 * 60; // 30일
 
     static async generateTokens(userId) {
-        const accessToken = JWT.sign({ userId }, jwtConfig.accessSecret, { expiresIn: ACCESS_TTL });
-        const refreshToken = JWT.sign({ userId }, jwtConfig.refreshSecret, { expiresIn: REFRESH_TTL });
+        const accessToken = JWT.sign({ userId }, jwtConfig.accessSecret, { expiresIn: JwtService.ACCESS_TTL });
+        const refreshToken = JWT.sign({ userId }, jwtConfig.refreshSecret, { expiresIn: JwtService.REFRESH_TTL });
 
         // Redis에 리프레시 토큰 저장
-        await sessionClient.setex(refreshToken, REFRESH_TTL, userId);
+        await sessionClient.setex(refreshToken, JwtService.REFRESH_TTL, userId);
 
         return { accessToken, refreshToken };
     }
